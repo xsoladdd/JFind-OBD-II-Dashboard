@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Button, cx, linkClass } from "@/components/ui";
 import { useEffect, useState } from "react";
 import { ALERT_PREFIX, describeRule, stopAlertEngine, syncAlertEngine } from "@/lib/alerts/engine";
 import { armAudio } from "@/lib/alerts/sound";
@@ -47,48 +48,52 @@ function Chip() {
         }}
         aria-expanded={open}
         aria-label={active.length ? `${active.length} alert${active.length > 1 ? "s" : ""} active` : "Alerts muted"}
-        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${fresh ? "animate-pulse bg-red-600 text-white" : active.length ? "bg-red-950 text-red-200" : "bg-zinc-800 text-zinc-300"}`}
+        className={cx(
+          "inline-flex min-h-11 items-center gap-1.5 rounded-control px-3 text-sm font-bold whitespace-nowrap",
+          fresh ? "animate-pulse bg-danger text-on-danger" : active.length ? "bg-danger-soft text-danger-fg" : "bg-surface-2 text-fg-muted",
+        )}
       >
-        {active.length ? `⚠ ${active.length}` : ""}
-        {muted && (active.length ? " 🔕" : "🔕 muted")}
+        {active.length ? <span className="num text-base">{active.length}</span> : null}
+        {active.length ? (active.length > 1 ? "alerts" : "alert") : ""}
+        {muted && <span className={active.length ? "font-medium opacity-80" : ""}>{active.length ? "muted" : "Muted"}</span>}
       </button>
       {open && (
         <div
           role="dialog"
           aria-label="Active alerts"
           onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
-          className="absolute right-0 top-9 z-50 w-72 space-y-3 rounded-xl border border-zinc-700 bg-zinc-900 p-3 text-sm shadow-xl"
+          className="absolute top-13 right-0 z-50 w-80 max-w-[calc(100vw-2rem)] space-y-3 rounded-panel border border-line bg-surface-1 p-4 shadow-xl shadow-black/40"
         >
           {active.length ? (
             <ul className="space-y-1">
               {active.map((a) => (
-                <li key={a.rule.id} className={a.acked ? "text-zinc-400" : "font-semibold text-red-200"}>
+                <li key={a.rule.id} className={a.acked ? "text-fg-faint" : "font-semibold text-danger-fg"}>
                   {describeRule(a.rule)}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-zinc-400">No alert is firing.</p>
+            <p className="text-fg-muted">No alert is firing.</p>
           )}
           <div className="flex flex-wrap gap-2">
             {fresh && (
-              <button onClick={ackAll} className="rounded-md bg-sky-600 px-3 py-1.5 font-semibold hover:bg-sky-500">
+              <Button variant="primary" size="sm" onClick={ackAll}>
                 Acknowledge
-              </button>
+              </Button>
             )}
             {muted ? (
-              <button onClick={unmute} className="rounded-md border border-zinc-600 px-3 py-1.5 hover:bg-zinc-800">
+              <Button size="sm" onClick={unmute}>
                 Unmute
-              </button>
+              </Button>
             ) : (
               MUTE_MINUTES.map((m) => (
-                <button key={m} onClick={() => mute(m)} className="rounded-md border border-zinc-600 px-3 py-1.5 hover:bg-zinc-800">
+                <Button key={m} size="sm" onClick={() => mute(m)}>
                   Mute {m} min
-                </button>
+                </Button>
               ))
             )}
           </div>
-          <Link href="/alerts" onClick={() => setOpen(false)} className="block text-xs text-sky-300 underline">
+          <Link href="/alerts" onClick={() => setOpen(false)} className={cx(linkClass, "inline-flex min-h-11 items-center text-sm")}>
             Manage alerts
           </Link>
         </div>

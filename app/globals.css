@@ -1,16 +1,152 @@
 @import "tailwindcss";
 
-@theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-/* A car app is dark by default: readable at night, no glare. */
+/* Cluster: OBD Dash's design tokens. DESIGN.md is the source of truth; change values there first. */
 :root {
-  color-scheme: dark;
+  color-scheme: dark; /* dark-first: readable at night, no glare */
+
+  /* Surfaces, darkest to lightest (warm graphite, hue 70) */
+  --bg: oklch(0.155 0.006 70); /* #0e0c09, also theme-color in app/layout.tsx and app/manifest.ts */
+  --surface-1: oklch(0.195 0.007 70);
+  --surface-2: oklch(0.24 0.008 70);
+  --surface-3: oklch(0.28 0.009 70);
+  --line: oklch(0.31 0.009 70);
+  --line-strong: oklch(0.5 0.01 70); /* control borders: 3:1 on surface-1 */
+
+  /* Text */
+  --fg: oklch(0.96 0.005 80);
+  --fg-muted: oklch(0.78 0.01 75);
+  --fg-faint: oklch(0.66 0.012 75);
+
+  /* The one accent (acid lime), and status. Warn and danger are reserved for vehicle state. */
+  --accent: oklch(0.89 0.19 122);
+  --accent-hover: oklch(0.93 0.17 122);
+  --on-accent: oklch(0.2 0.04 122);
+  --ok: var(--accent);
+  --warn: oklch(0.82 0.15 75);
+  --danger: oklch(0.7 0.19 27);
+  --danger-fg: oklch(0.78 0.13 27); /* danger as small text */
+  --on-danger: oklch(0.18 0.03 27);
+
+  --r-panel: 14px;
+  --r-control: 10px;
 }
 
-body {
-  background: var(--color-zinc-950);
-  color: var(--color-zinc-100);
+@theme inline {
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --color-bg: var(--bg);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-faint: var(--fg-faint);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-on-accent: var(--on-accent);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --color-danger-fg: var(--danger-fg);
+  --color-on-danger: var(--on-danger);
+  --color-accent-soft: color-mix(in oklch, var(--accent) 14%, transparent);
+  --color-warn-soft: color-mix(in oklch, var(--warn) 14%, transparent);
+  --color-danger-soft: color-mix(in oklch, var(--danger) 16%, transparent);
+
+  --radius-panel: var(--r-panel);
+  --radius-control: var(--r-control);
+}
+
+/* Transition only: pages not restyled yet use zinc-* and sky-* literals. Tint them to the Cluster ramps so they
+   don't clash. Delete this block once no component uses zinc-* or sky-* (see DESIGN.md, Agent guide). */
+@theme {
+  --color-zinc-50: oklch(0.985 0.003 75);
+  --color-zinc-100: oklch(0.96 0.005 80);
+  --color-zinc-200: oklch(0.92 0.006 75);
+  --color-zinc-300: oklch(0.87 0.008 75);
+  --color-zinc-400: oklch(0.78 0.01 75);
+  --color-zinc-500: oklch(0.66 0.012 75);
+  --color-zinc-600: oklch(0.5 0.01 70);
+  --color-zinc-700: oklch(0.37 0.01 70);
+  --color-zinc-800: oklch(0.29 0.009 70);
+  --color-zinc-900: oklch(0.195 0.007 70);
+  --color-zinc-950: oklch(0.155 0.006 70);
+  --color-sky-50: oklch(0.97 0.05 122);
+  --color-sky-100: oklch(0.95 0.08 122);
+  --color-sky-200: oklch(0.92 0.13 122);
+  --color-sky-300: oklch(0.89 0.17 122);
+  --color-sky-400: oklch(0.84 0.18 122);
+  --color-sky-500: oklch(0.55 0.14 122);
+  --color-sky-600: oklch(0.5 0.13 122); /* old primary buttons keep light text: 4.5:1 */
+  --color-sky-700: oklch(0.45 0.12 122);
+  --color-sky-800: oklch(0.4 0.1 122);
+  --color-sky-900: oklch(0.34 0.08 122);
+  --color-sky-950: oklch(0.27 0.06 122);
+}
+
+/* Phones held sideways: short and wide. The shell swaps the bottom tab bar for a side rail. */
+@custom-variant short (@media (orientation: landscape) and (max-height: 32rem));
+
+/* Big tabular numbers: values, readouts, gauges. */
+@utility num {
+  font-family: var(--font-display);
+  font-stretch: 75%;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Base layer, so utilities (truncate, outline-none on a custom ring...) can still override. */
+@layer base {
+  html {
+    /* Keep a focused or scrolled-to element clear of the sticky header and the phone tab bar. */
+    scroll-padding-block: 4.5rem;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap-style: balance; /* the longhand, so truncate/whitespace utilities still apply */
+  }
+
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  label,
+  summary {
+    touch-action: manipulation; /* no double-tap zoom delay */
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

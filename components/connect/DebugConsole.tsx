@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Button, Disclosure, Input } from "@/components/ui";
 import { visible } from "@/lib/storage/logs";
 import { useConnection, type LogLine } from "@/lib/store/connection";
 
 const QUICK = ["ATI", "ATRV", "ATDPN", "0100", "010C", "010D", "03", "0902"];
 const ARROW: Record<LogLine["dir"], string> = { tx: "→", rx: "←", info: "·", error: "!" };
 const COLOR: Record<LogLine["dir"], string> = {
-  tx: "text-sky-300",
-  rx: "text-zinc-300",
-  info: "text-emerald-300",
-  error: "text-red-300",
+  tx: "text-accent",
+  rx: "text-fg",
+  info: "text-fg-faint",
+  error: "text-danger-fg",
 };
 
 export function DebugConsole() {
@@ -28,18 +29,18 @@ export function DebugConsole() {
   };
 
   return (
-    <details id="debug-console" className="rounded-lg border border-zinc-800 bg-zinc-900">
-      <summary className="min-h-11 cursor-pointer select-none px-4 py-3 font-semibold">Debug console</summary>
-      <div className="space-y-4 px-4 pb-4">
+    <Disclosure id="debug-console" summary="Debug console">
+      <div className="space-y-4">
         <div
           ref={logRef}
-          className="h-64 overflow-y-auto rounded-md bg-black p-2 font-mono text-xs leading-5"
+          translate="no"
+          className="h-64 overflow-y-auto rounded-control border border-line bg-bg p-3 font-mono text-[13px] leading-5"
           aria-label="Raw adapter traffic"
         >
-          {log.length === 0 && <p className="text-zinc-500">No traffic yet.</p>}
+          {log.length === 0 && <p className="text-fg-faint">No traffic yet.</p>}
           {log.map((l) => (
             <div key={l.id} className={`whitespace-pre-wrap break-all ${COLOR[l.dir]}`}>
-              <span className="select-none text-zinc-600">{ARROW[l.dir]} </span>
+              <span className="select-none text-fg-faint">{ARROW[l.dir]} </span>
               {l.dir === "rx" ? visible(l.text) : l.text}
             </div>
           ))}
@@ -55,51 +56,50 @@ export function DebugConsole() {
           <label htmlFor="raw-cmd" className="sr-only">
             Raw command
           </label>
-          <input
+          <Input
             id="raw-cmd"
+            name="raw-cmd"
             value={cmd}
             onChange={(e) => setCmd(e.target.value)}
             placeholder="AT or OBD command, e.g. 010C"
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}
-            className="min-w-0 flex-1 rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 font-mono text-sm"
+            className="flex-1 font-mono"
           />
-          <button className="rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold hover:bg-sky-500">Send</button>
+          <Button type="submit" variant="primary">
+            Send
+          </Button>
         </form>
 
         <div className="flex flex-wrap gap-2">
           {QUICK.map((q) => (
-            <button
-              key={q}
-              onClick={() => send(q)}
-              className="rounded border border-zinc-700 px-2 py-1 font-mono text-xs hover:bg-zinc-800"
-            >
+            <Button key={q} size="sm" translate="no" className="px-3 font-mono" onClick={() => send(q)}>
               {q}
-            </button>
+            </Button>
           ))}
-          <button onClick={clearLog} className="ml-auto text-xs text-zinc-400 underline">
-            clear log
-          </button>
+          <Button variant="ghost" size="sm" className="ml-auto" onClick={clearLog}>
+            Clear log
+          </Button>
         </div>
 
         <div>
-          <h3 className="text-sm font-semibold">GATT services &amp; characteristics</h3>
+          <h3 className="font-semibold">GATT services &amp; characteristics</h3>
           {mode === "demo" ? (
-            <p className="mt-1 text-sm text-zinc-400">Demo mode uses the built-in simulator, so there is no GATT.</p>
+            <p className="mt-1 text-fg-muted">Demo mode uses the built-in simulator, so there is no GATT.</p>
           ) : gatt.length === 0 ? (
-            <p className="mt-1 text-sm text-zinc-400">Connect to an adapter to list what it exposes.</p>
+            <p className="mt-1 text-fg-muted">Connect to an adapter to list what it exposes.</p>
           ) : (
-            <ul className="mt-2 space-y-2 font-mono text-xs">
+            <ul className="mt-2 space-y-2 font-mono text-[13px]">
               {gatt.map((svc) => (
                 <li key={svc.uuid}>
-                  <div className="text-zinc-300">service {svc.uuid}</div>
+                  <div className="text-fg">service {svc.uuid}</div>
                   <ul className="ml-4">
                     {svc.characteristics.map((c) => (
-                      <li key={c.uuid} className="text-zinc-400">
+                      <li key={c.uuid} className="text-fg-muted">
                         {c.uuid} [{c.properties.join(", ")}]
-                        {selected?.notify === c.uuid && <span className="ml-2 text-emerald-300">← notify</span>}
-                        {selected?.write === c.uuid && <span className="ml-2 text-sky-300">← write</span>}
+                        {selected?.notify === c.uuid && <span className="ml-2 text-ok">← notify</span>}
+                        {selected?.write === c.uuid && <span className="ml-2 text-accent">← write</span>}
                       </li>
                     ))}
                   </ul>
@@ -109,6 +109,6 @@ export function DebugConsole() {
           )}
         </div>
       </div>
-    </details>
+    </Disclosure>
   );
 }

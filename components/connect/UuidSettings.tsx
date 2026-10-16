@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button, buttonClass, cx, Disclosure, Field, Input, Select } from "@/components/ui";
 import { captureInUse, exportProfiles, matchProfile, parseProfiles, toOverrides, toProfile, upsertProfiles } from "@/lib/connect/profiles";
 import { download } from "@/lib/diagnostics/report";
 import { useSetting } from "@/lib/storage/settings";
@@ -28,20 +29,17 @@ const METHOD_LABEL: Record<WriteMethod, string> = {
   "without-response": "Without response",
 };
 
-const BTN = "min-h-11 rounded-md border border-zinc-600 px-4 text-sm font-medium hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40";
-const INPUT = "mt-1 block min-h-11 w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm";
 const CUSTOM = "__custom";
 
 export function UuidSettings() {
   const mounted = useMounted();
   const [stored] = useSetting<unknown>("ble.uuids", null);
   return (
-    <details id="uuid-settings" className="rounded-lg border border-zinc-800 bg-zinc-900">
-      <summary className="min-h-11 cursor-pointer select-none px-4 py-3 font-semibold">Settings: adapter profiles and Bluetooth UUIDs</summary>
+    <Disclosure id="uuid-settings" summary="Settings: adapter profiles and Bluetooth UUIDs">
       {/* Settings load in the browser (and settings.json later still), so the form renders after hydration and
           starts over when the stored value changes. */}
       {mounted && <ProfileEditor key={JSON.stringify(stored)} />}
-    </details>
+    </Disclosure>
   );
 }
 
@@ -87,16 +85,15 @@ function ProfileEditor() {
   };
 
   return (
-    <div className="space-y-4 px-4 pb-4">
-      <p className="text-sm text-zinc-400">
+    <div className="space-y-4">
+      <p className="text-fg-muted">
         A profile is a saved set of Bluetooth settings: service, notify and write UUIDs and the write method. Pick one before you
         connect. Leave the UUIDs blank to auto-pick the first notify and write characteristics. The debug console lists what your
         adapter exposes. Changes apply on the next Connect.
       </p>
 
-      <label className="block text-sm">
-        <span className="text-zinc-300">Profile in use</span>
-        <select value={current?.name ?? (isAuto ? "" : CUSTOM)} onChange={(e) => pick(e.target.value)} className={INPUT}>
+      <Field label="Profile in use">
+        <Select name="profile" value={current?.name ?? (isAuto ? "" : CUSTOM)} onChange={(e) => pick(e.target.value)}>
           <option value="">Auto-pick (no profile)</option>
           {!current && !isAuto && <option value={CUSTOM}>Custom settings (not saved as a profile)</option>}
           {profiles.map((p) => (
@@ -104,11 +101,11 @@ function ProfileEditor() {
               {p.name}
             </option>
           ))}
-        </select>
-      </label>
+        </Select>
+      </Field>
 
       <form
-        className="space-y-3 rounded-md border border-zinc-800 p-3"
+        className="space-y-3 rounded-control border border-line p-3 sm:p-4"
         onSubmit={(e) => {
           e.preventDefault();
           apply(values, "Saved. Applies on the next Connect.");
@@ -116,75 +113,62 @@ function ProfileEditor() {
       >
         <h3 className="font-semibold">Edit profile</h3>
         {working && (
-          <button type="button" className={BTN} onClick={() => edit(working)}>
+          <Button size="sm" onClick={() => edit(working)}>
             Copy the working settings into the form
-          </button>
+          </Button>
         )}
         {FIELDS.map((f) => (
-          <label key={f.key} className="block text-sm">
-            <span className="text-zinc-300">{f.label}</span>
-            <input
+          <Field key={f.key} label={f.label}>
+            <Input
+              name={f.key}
+              translate="no"
               value={values[f.key]}
               onChange={(e) => edit({ ...values, [f.key]: e.target.value })}
               placeholder={f.hint}
               spellCheck={false}
               autoComplete="off"
-              className={`${INPUT} font-mono`}
+              className="font-mono"
             />
-          </label>
+          </Field>
         ))}
-        <label className="block text-sm">
-          <span className="text-zinc-300">Write method</span>
-          <select value={values.writeMethod} onChange={(e) => edit({ ...values, writeMethod: e.target.value as WriteMethod })} className={INPUT}>
+        <Field label="Write method">
+          <Select name="write-method" value={values.writeMethod} onChange={(e) => edit({ ...values, writeMethod: e.target.value as WriteMethod })}>
             {WRITE_METHODS.map((m) => (
               <option key={m} value={m}>
                 {METHOD_LABEL[m]}
               </option>
             ))}
-          </select>
-        </label>
+          </Select>
+        </Field>
         <div className="flex flex-wrap items-center gap-2">
-          <button className="min-h-11 rounded-md bg-sky-600 px-4 text-sm font-semibold hover:bg-sky-500">Save</button>
-          <button type="button" onClick={() => apply(EMPTY_OVERRIDES, "")} className="min-h-11 px-2 text-sm text-zinc-400 underline">
+          <Button type="submit" variant="primary" size="sm">
+            Save
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => apply(EMPTY_OVERRIDES, "")}>
             Reset to auto
-          </button>
+          </Button>
         </div>
-        <div className="flex flex-wrap items-end gap-2 border-t border-zinc-800 pt-3">
-          <label className="block min-w-0 flex-1 text-sm">
-            <span className="text-zinc-300">Save these settings as a profile</span>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Profile name"
-              autoComplete="off"
-              className={INPUT}
-              aria-label="Profile name"
-            />
-          </label>
-          <button type="button" onClick={saveProfile} className={BTN}>
-            Save profile
-          </button>
+        <div className="flex flex-wrap items-end gap-2 border-t border-line pt-3">
+          <Field label="Save these settings as a profile" className="min-w-0 flex-1">
+            <Input name="profile-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Profile name" autoComplete="off" />
+          </Field>
+          <Button onClick={saveProfile}>Save profile</Button>
         </div>
       </form>
 
       <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          disabled={!current}
-          onClick={() => setProfiles(profiles.filter((p) => p.name !== current?.name))}
-          className={BTN}
-        >
+        <Button variant="danger" size="sm" disabled={!current} onClick={() => confirm(`Delete the profile ${current?.name}?`) && setProfiles(profiles.filter((p) => p.name !== current?.name))}>
           Delete this profile
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          size="sm"
           disabled={!profiles.length}
           onClick={() => download("obd-dash-adapter-profiles.json", exportProfiles(profiles), "application/json")}
-          className={BTN}
         >
           Export profiles
-        </button>
-        <label className={`${BTN} flex cursor-pointer items-center`}>
+        </Button>
+        {/* The file input is visually hidden, so its focus ring is drawn on the label. */}
+        <label className={cx(buttonClass("secondary", "sm"), "cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent")}>
           Import profiles
           <input
             type="file"
@@ -197,7 +181,7 @@ function ProfileEditor() {
           />
         </label>
       </div>
-      <p aria-live="polite" className="text-sm text-emerald-300">
+      <p aria-live="polite" className="text-sm font-medium text-ok">
         {note}
       </p>
     </div>

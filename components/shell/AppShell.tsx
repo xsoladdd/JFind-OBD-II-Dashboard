@@ -33,22 +33,40 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-40 flex h-12 items-center gap-3 border-b border-zinc-800 bg-zinc-950/95 px-4 backdrop-blur">
-        <span className="shrink-0 font-bold tracking-tight">OBD Dash</span>
+      <a
+        href="#content"
+        className="sr-only z-50 rounded-control bg-accent px-4 py-3 font-semibold text-on-accent focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
+      >
+        Skip to content
+      </a>
+      <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-line bg-bg/95 pr-[max(1rem,env(safe-area-inset-right))] pl-[max(1rem,env(safe-area-inset-left))] backdrop-blur short:h-12">
+        <span translate="no" className="shrink-0 text-lg font-extrabold tracking-[0.02em] uppercase [font-stretch:75%]">
+          OBD Dash
+        </span>
         <div className="ml-auto min-w-0">
           <ConnectionChip />
         </div>
         <AlertIndicator />
       </header>
       <div className="flex flex-1">
-        <nav aria-label="Main" className="hidden w-48 shrink-0 border-r border-zinc-800 p-3 md:block">
+        <nav
+          aria-label="Main"
+          className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-56 shrink-0 overflow-y-auto border-r border-line p-3 md:block short:hidden"
+        >
           {tabs("side")}
         </nav>
-        <div className="min-w-0 flex-1 pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">{children}</div>
+        {/* Room for the tab bar (portrait phone) or the side rail (landscape phone). */}
+        <div
+          id="content"
+          tabIndex={-1}
+          className="min-w-0 flex-1 pb-[calc(3.5rem+env(safe-area-inset-bottom))] outline-none md:pb-0 short:pb-0 short:pr-[env(safe-area-inset-right)] short:pl-[calc(6rem+env(safe-area-inset-left))]"
+        >
+          {children}
+        </div>
       </div>
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-800 bg-zinc-950/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden short:top-12 short:right-auto short:block short:w-[calc(6rem+env(safe-area-inset-left))] short:overflow-y-auto short:border-t-0 short:border-r short:pb-0 short:pl-[env(safe-area-inset-left)]"
       >
         {tabs("tabs")}
       </nav>

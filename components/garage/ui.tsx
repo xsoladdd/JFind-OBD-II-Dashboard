@@ -1,14 +1,17 @@
 import type { ReactNode } from "react";
+import { buttonClass, inputClass, panelClass } from "@/components/ui";
 
-export const card = "rounded-lg border border-zinc-800 bg-zinc-900 p-4";
-export const input = "w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm";
-export const btn = "rounded-md border border-zinc-600 px-3 py-2 text-sm font-semibold hover:bg-zinc-800 disabled:opacity-40";
-export const btnPrimary = "rounded-md bg-sky-600 px-3 py-2 text-sm font-semibold hover:bg-sky-500 disabled:opacity-40";
+// Retiring: kept so pages not yet restyled still render, now drawn by the UI kit. New code imports components/ui.
+export const card = `${panelClass} p-4`;
+export const input = inputClass;
+export const btn = buttonClass("secondary", "sm");
+export const btnPrimary = buttonClass("primary", "sm");
 
+/** Retiring: wraps its control in a <label>. New code uses Field from components/ui. */
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label className="block text-xs text-zinc-400">
-      <span className="mb-1 block">{label}</span>
+    <label className="block text-sm font-medium text-fg-muted">
+      <span className="mb-1.5 block">{label}</span>
       {children}
     </label>
   );

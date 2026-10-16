@@ -14,6 +14,7 @@ A client-only web app for the JF327 (an ELM327-style Bluetooth LE OBD-II adapter
 - **Dyno** (on `/trips`): a power and torque estimate from a single-gear pull. See [docs/dyno.md](docs/dyno.md).
 - **History** (`/history`) and storage: `settings.json`, scan history, Garage file and debug logs in a folder you pick, or the browser's private storage where there is no folder picker. See [docs/storage.md](docs/storage.md).
 - **PIDs** (`/pids`): about 40 more standard Mode 01 readings, and your own custom PIDs (manufacturer Mode 21/22) with a safe formula parser, header switching, Test once and JSON import/export. See [docs/custom-pids.md](docs/custom-pids.md).
+- **Design**: the Cluster look, its tokens and the UI kit. See [DESIGN.md](DESIGN.md) and [docs/ui-kit.md](docs/ui-kit.md).
 
 On phones the bottom bar shows four main pages (Dashboard, Diagnostics, Garage, Trips) plus **More**, which lists the rest. The sidebar on larger screens lists everything. The page list lives in `lib/nav.ts`.
 
@@ -138,3 +139,4 @@ Things I couldn't confirm without the hardware or an authoritative source:
 - [ ] **Dyno pull detection and ratio check** (`lib/trips/dyno.ts`): the 200 rpm drop, 50 rpm/s "climbing" rate, 1500 rpm / 2 s minimum, and 1 km/h + 5 % ratio tolerance are app defaults tuned on Demo mode and synthetic data. Check them on real pulls with the JF327.
 - [ ] **Dyno sample rate on the JF327**: how many 010C and 010D readings per second a real pull gets (Demo mode gets about 7 of each). Fewer readings mean a rougher curve; check the rate in the run's "inputs used".
 - [ ] **010D rounding**: whether the car rounds or truncates vehicle speed. Truncation biases the fitted gear ratio slightly at low speed.
+- [ ] **Cluster legibility in the car**: contrast was measured (WCAG ratios in DESIGN.md), not tried on a real phone in a mount in direct sun and at night. Check the faint text (units, inactive tabs) and the landscape rail.

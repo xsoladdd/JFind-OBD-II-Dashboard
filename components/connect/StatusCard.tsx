@@ -1,58 +1,78 @@
 "use client";
 
+import Link from "next/link";
+import { Badge, Button, buttonClass, InlineNote, NO_VALUE, panelClass, Stat, type Tone } from "@/components/ui";
 import { describeProtocol } from "@/lib/elm/protocols";
 import { useConnection, type ConnStatus } from "@/lib/store/connection";
 
-const PILL: Record<ConnStatus, string> = {
-  idle: "bg-zinc-700 text-zinc-200",
-  connecting: "bg-sky-600/30 text-sky-200",
-  connected: "bg-emerald-600/30 text-emerald-200",
-  reconnecting: "bg-amber-600/30 text-amber-200",
-  error: "bg-red-600/30 text-red-200",
+const TONE: Record<ConnStatus, Tone> = {
+  idle: "neutral",
+  connecting: "neutral",
+  connected: "ok",
+  reconnecting: "warn",
+  error: "danger",
 };
 
 export function StatusCard() {
   const s = useConnection();
   if (s.status === "idle" && !s.error) return null;
   const proto = s.protocol ? describeProtocol(s.protocol) : null;
+  const active = s.status !== "idle" && s.status !== "error";
 
   return (
-    <section className="rounded-lg border border-zinc-800 bg-zinc-900 p-4" aria-live="polite">
-      <div className="flex items-center justify-between gap-2">
-        <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${PILL[s.status]}`}>
-          {s.status}
-        </span>
-        {s.status !== "idle" && s.status !== "error" && (
-          <button onClick={() => void s.disconnect()} className="rounded-md border border-zinc-700 px-3 py-1 text-sm hover:bg-zinc-800">
-            Disconnect
-          </button>
-        )}
+    <section className={`${panelClass} p-4 sm:p-5`} aria-live="polite" aria-labelledby="status-title">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <Badge tone={TONE[s.status]} className="uppercase">
+            {s.status}
+          </Badge>
+          <h2 id="status-title" className="mt-2 truncate text-2xl font-semibold">
+            {s.deviceName || "No adapter"}
+          </h2>
+          <p className="text-fg-muted">{s.elmVersion || "Adapter version unknown"}</p>
+        </div>
+        <Stat
+          label="Voltage"
+          value={s.voltage?.replace(/\s*V$/i, "")}
+          unit="V"
+          size="lg"
+          className="shrink-0 text-right"
+          note={
+            s.status === "connected" && (
+              <Button variant="ghost" size="sm" className="-mr-3" onClick={() => void s.refreshVoltage()}>
+                Refresh
+              </Button>
+            )
+          }
+        />
       </div>
 
-      {s.error && <p className="mt-3 text-sm text-red-300">{s.error}</p>}
+      {s.error && (
+        <InlineNote tone="danger" className="mt-4">
+          {s.error}
+        </InlineNote>
+      )}
       {s.vehicleError && (
-        <p className="mt-3 text-sm text-amber-300">
+        <InlineNote tone="warn" className="mt-4">
           The adapter answered but the car didn&apos;t ({s.vehicleError}). Is the ignition on?
-        </p>
+        </InlineNote>
       )}
 
-      <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-        <dt className="text-zinc-400">Device</dt>
-        <dd>{s.deviceName || "—"}</dd>
-        <dt className="text-zinc-400">Adapter</dt>
-        <dd>{s.elmVersion || "—"}</dd>
-        <dt className="text-zinc-400">Protocol</dt>
-        <dd>{proto ? `${proto.name}${proto.auto ? " (auto)" : ""} · ${s.protocol}` : "—"}</dd>
-        <dt className="text-zinc-400">Voltage</dt>
-        <dd className="flex items-center gap-3">
-          <span className="font-mono">{s.voltage || "—"}</span>
-          {s.status === "connected" && (
-            <button onClick={() => void s.refreshVoltage()} className="text-xs text-sky-300 underline">
-              refresh
-            </button>
-          )}
-        </dd>
+      <dl className="mt-4 border-t border-line pt-4">
+        <dt className="text-sm text-fg-muted">Protocol</dt>
+        <dd className="mt-0.5 font-medium">{proto ? `${proto.name}${proto.auto ? " (auto)" : ""} · ${s.protocol}` : NO_VALUE}</dd>
       </dl>
+
+      {active && (
+        <div className="mt-5 grid grid-cols-2 gap-2 sm:flex">
+          {s.status === "connected" && (
+            <Link href="/dashboard" className={buttonClass("primary")}>
+              Open dashboard
+            </Link>
+          )}
+          <Button onClick={() => void s.disconnect()}>Disconnect</Button>
+        </div>
+      )}
     </section>
   );
 }

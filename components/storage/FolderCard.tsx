@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { btn, btnPrimary, card } from "@/components/garage/ui";
+import { Button, cx, InlineNote, linkClass, panelClass } from "@/components/ui";
 import { useFolder } from "@/lib/storage/folder";
 import { useSettingsWarning } from "@/lib/storage/settings";
 
@@ -17,52 +17,49 @@ export function FolderCard() {
     setError("");
     fn().catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   };
-  const name = <strong className="font-semibold text-zinc-100">{folderName}</strong>;
+  const name = <strong className="font-semibold text-fg">{folderName}</strong>;
 
   if (status === "unsupported")
     return (
-      <div role="alert" className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-100">
-        <p className="font-semibold text-amber-300">History and settings can&apos;t be saved in this browser</p>
-        <p className="mt-1">
+      <InlineNote role="alert" tone="warn" title="History and settings can’t be saved in this browser">
+        <p>
           Saving needs a browser that can open a folder on this device, such as Chrome or Edge on a computer. Here,
           settings last until you close the tab and scans and debug logs aren&apos;t kept. Everything else works.
         </p>
-      </div>
+      </InlineNote>
     );
 
   return (
-    <section className={`${card} space-y-3 text-sm`} aria-label="Storage folder">
+    <section className={cx(panelClass, "space-y-4 p-4 sm:p-5")} aria-label="Storage folder">
       {status === "unlinked" && (
         <>
-          <p className="text-zinc-300">
+          <p className="text-fg-muted">
             OBD Dash saves settings, scans, cars and debug logs as plain files in a folder you choose. Pick an empty folder,
             or make a new one such as &ldquo;OBD Dash&rdquo;.
           </p>
-          <button className={btnPrimary} onClick={run(link)}>
+          <Button variant="primary" onClick={run(link)}>
             Choose folder
-          </button>
+          </Button>
         </>
       )}
       {status === "needs-permission" && (
         <>
-          <p className="text-zinc-300">The browser needs your OK again before OBD Dash can save to {name}.</p>
+          <p className="text-fg-muted">The browser needs your OK again before OBD Dash can save to {name}.</p>
           <div className="flex flex-wrap gap-2">
-            <button className={btnPrimary} onClick={run(regrant)}>
+            <Button variant="primary" onClick={run(regrant)}>
               Allow access to {folderName}
-            </button>
-            <button className={btn} onClick={run(link)}>
-              Choose a different folder
-            </button>
+            </Button>
+            <Button onClick={run(link)}>Choose a different folder</Button>
           </div>
         </>
       )}
       {status === "ready" && location === "browser" && (
         <div className="space-y-2">
-          <p className="text-zinc-300">
-            <span className="mr-2 inline-block h-2 w-2 rounded-full bg-emerald-400" aria-hidden />
-            <strong className="font-semibold text-zinc-100">Saved in this browser</strong>
-          </p>
-          <ul className="list-disc space-y-1 pl-5 text-zinc-400">
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <span className="size-2.5 rounded-full bg-ok" aria-hidden />
+            Saved in this browser
+          </h2>
+          <ul className="list-disc space-y-1 pl-5 text-fg-muted marker:text-fg-faint">
             <li>This browser can&apos;t open a folder, so settings, scans, cars and logs are kept in its private storage.</li>
             <li>The files aren&apos;t visible in the Files app.</li>
             <li>Clearing this site&apos;s data deletes them.</li>
@@ -72,7 +69,7 @@ export function FolderCard() {
               ) : (
                 <>
                   To keep a copy, download files from{" "}
-                  <Link href="/history" className="text-sky-300 underline">
+                  <Link href="/history" className={linkClass}>
                     History
                   </Link>
                   .
@@ -84,25 +81,30 @@ export function FolderCard() {
       )}
       {status === "ready" && location !== "browser" && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <p className="mr-auto text-zinc-300">
-            <span className="mr-2 inline-block h-2 w-2 rounded-full bg-emerald-400" aria-hidden />
-            Saving to {name}
-          </p>
-          <span className="flex gap-4">
-            <button className="text-sky-300 underline" onClick={run(link)}>
+          <h2 className="mr-auto flex items-center gap-2 text-lg font-semibold">
+            <span className="size-2.5 shrink-0 rounded-full bg-ok" aria-hidden />
+            <span className="min-w-0">Saving to {name}</span>
+          </h2>
+          <span className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={run(link)}>
               Change folder
-            </button>
-            <button
-              className="text-zinc-400 underline"
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => confirm(`Stop saving to ${folderName}? Its files stay where they are.`) && run(unlink)()}
             >
               Forget folder
-            </button>
+            </Button>
           </span>
         </div>
       )}
-      {warning && <p className="rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-amber-100">{warning}</p>}
-      {error && <p className="text-red-300">{error}</p>}
+      {warning && <InlineNote tone="warn">{warning}</InlineNote>}
+      {error && (
+        <InlineNote role="alert" tone="danger">
+          {error}
+        </InlineNote>
+      )}
     </section>
   );
 }

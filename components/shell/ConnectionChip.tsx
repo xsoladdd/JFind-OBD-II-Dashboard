@@ -5,11 +5,11 @@ import { describeProtocol } from "@/lib/elm/protocols";
 import { useConnection, type ConnStatus } from "@/lib/store/connection";
 
 const DOT: Record<ConnStatus, string> = {
-  idle: "bg-zinc-500",
-  connecting: "bg-sky-400 animate-pulse",
-  connected: "bg-emerald-400",
-  reconnecting: "bg-amber-400 animate-pulse",
-  error: "bg-red-500",
+  idle: "bg-fg-faint",
+  connecting: "bg-fg-muted animate-pulse",
+  connected: "bg-ok",
+  reconnecting: "bg-warn animate-pulse",
+  error: "bg-danger",
 };
 const LABEL: Record<ConnStatus, string> = {
   idle: "Not connected",
@@ -31,20 +31,21 @@ export function ConnectionChip() {
     <Link
       href="/"
       title="Open the Connect screen"
-      className="flex min-h-11 min-w-0 items-center gap-2 text-xs sm:text-sm"
+      className="flex min-h-11 min-w-0 items-center gap-2 rounded-control border border-line bg-surface-1 px-3 text-sm transition-colors duration-150 hover:bg-surface-2"
       aria-live="polite"
     >
       <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${DOT[status]}`} aria-hidden />
       <span className="shrink-0 font-semibold">
         {LABEL[status]}
-        {mode === "demo" && status !== "idle" && <span className="ml-1 font-normal text-zinc-400">(demo)</span>}
+        {mode === "demo" && status !== "idle" && <span className="ml-1 font-normal text-fg-muted">(demo)</span>}
       </span>
+      {/* The Connect screen shows the protocol in full; on a phone the header keeps status and voltage. */}
       {proto && (
-        <span className="min-w-0 truncate text-zinc-400" title={proto}>
+        <span className="hidden min-w-0 truncate text-fg-muted sm:inline" title={proto}>
           {proto}
         </span>
       )}
-      {voltage && <span className="shrink-0 font-mono tabular-nums text-zinc-200">{voltage}</span>}
+      {voltage && <span className="num shrink-0 text-base">{voltage}</span>}
     </Link>
   );
 }

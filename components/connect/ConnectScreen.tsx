@@ -1,6 +1,7 @@
 "use client";
 
 import { FolderCard } from "@/components/storage/FolderCard";
+import { Button, Panel } from "@/components/ui";
 import { useFolder } from "@/lib/storage/folder";
 import { useConnection } from "@/lib/store/connection";
 import { AdapterInfoCard } from "./AdapterInfoCard";
@@ -30,44 +31,41 @@ export function ConnectScreen() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-2xl space-y-4 px-4 py-6">
-      <header>
-        <h1 className="text-2xl font-bold">OBD Dash</h1>
-        <p className="text-sm text-zinc-400">Live engine data from an ELM327 Bluetooth adapter. Everything stays on this device.</p>
+    <main className="mx-auto w-full max-w-6xl px-4 py-6 md:px-6 md:py-8 short:py-4">
+      <header className="mb-5 max-w-2xl short:mb-3">
+        <h1 className="text-3xl font-bold tracking-tight short:text-2xl">Connect</h1>
+        <p className="mt-1 text-fg-muted">Live engine data from an ELM327 Bluetooth adapter. Everything stays on this device.</p>
       </header>
 
-      <CompatBanner />
-
-      <section className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-        <ol className="list-decimal space-y-1 pl-5 text-sm text-zinc-300">
-          {STEPS.map((s) => (
-            <li key={s}>{s}</li>
-          ))}
-        </ol>
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-          <button
-            onClick={() => start("ble")}
-            disabled={!hasBt || busy}
-            className="rounded-md bg-sky-600 px-5 py-3 font-semibold hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Connect
-          </button>
-          <button
-            onClick={() => start("demo")}
-            disabled={busy}
-            className="rounded-md border border-zinc-600 px-5 py-3 font-semibold hover:bg-zinc-800 disabled:opacity-40"
-          >
-            Demo mode
-          </button>
+      {/* Two columns once there is room, landscape phones included: the actions stay in the first one. */}
+      <div className="grid gap-4 lg:grid-cols-2 lg:items-start short:grid-cols-2 short:items-start">
+        <div className="space-y-4">
+          <CompatBanner />
+          <StatusCard />
+          <Panel title="How to connect">
+            <ol className="list-decimal space-y-1.5 pl-5 text-fg-muted marker:font-semibold marker:text-fg-faint">
+              {STEPS.map((s) => (
+                <li key={s}>{s}</li>
+              ))}
+            </ol>
+            <div className="mt-5 grid gap-2 sm:grid-cols-2">
+              <Button variant="primary" onClick={() => start("ble")} disabled={!hasBt || busy}>
+                Connect
+              </Button>
+              <Button onClick={() => start("demo")} disabled={busy}>
+                Demo mode
+              </Button>
+            </div>
+          </Panel>
+          <FolderCard />
         </div>
-      </section>
-
-      <StatusCard />
-      <AdapterInfoCard />
-      <Troubleshooting />
-      <FolderCard />
-      <DebugConsole />
-      <UuidSettings />
+        <div className="space-y-4">
+          <AdapterInfoCard />
+          <Troubleshooting />
+          <DebugConsole />
+          <UuidSettings />
+        </div>
+      </div>
     </main>
   );
 }

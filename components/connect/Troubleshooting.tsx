@@ -1,5 +1,6 @@
 "use client";
 
+import { Button, Disclosure, InlineNote } from "@/components/ui";
 import { pickStep, STEPS, type Step } from "@/lib/connect/troubleshoot";
 import { useConnection } from "@/lib/store/connection";
 import { CopyDiagnostics } from "./CopyDiagnostics";
@@ -17,7 +18,7 @@ const LINKS = { uuids: ["Open the UUID settings", "uuid-settings"], console: ["O
 function StepBody({ step }: { step: Step }) {
   return (
     <>
-      <ol className="list-decimal space-y-1.5 pl-5 text-sm text-zinc-300">
+      <ol className="list-decimal space-y-1.5 pl-5 text-fg-muted marker:text-fg-faint">
         {step.items.map((t) => (
           <li key={t}>{t}</li>
         ))}
@@ -25,13 +26,9 @@ function StepBody({ step }: { step: Step }) {
       {step.links && (
         <div className="mt-3 flex flex-wrap gap-2">
           {step.links.map((l) => (
-            <button
-              key={l}
-              onClick={() => openSection(LINKS[l][1])}
-              className="min-h-11 rounded-md border border-zinc-600 px-3 text-sm hover:bg-zinc-800"
-            >
+            <Button key={l} size="sm" onClick={() => openSection(LINKS[l][1])}>
               {LINKS[l][0]}
-            </button>
+            </Button>
           ))}
         </div>
       )}
@@ -48,30 +45,27 @@ export function Troubleshooting() {
 
   return (
     // Remounts when a step starts or stops matching, so the section opens or closes to fit.
-    <details key={matched ?? "none"} open={!!matched} className="rounded-lg border border-zinc-800 bg-zinc-900">
-      <summary className="min-h-11 cursor-pointer select-none px-4 py-3 font-semibold">Troubleshooting guide</summary>
-      <div className="space-y-4 px-4 pb-4">
-        <p className="text-sm text-zinc-400">
+    <Disclosure key={matched ?? "none"} open={!!matched} summary="Troubleshooting guide">
+      <div className="space-y-4">
+        <p className="text-fg-muted">
           General ELM327 and Web Bluetooth advice, not specific to one adapter model. Try the steps in order.
         </p>
         {first && (
-          <div role="status" className="space-y-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-3">
-            <h3 className="font-semibold text-amber-200">Looks like: {first.title}</h3>
-            <StepBody step={first} />
-          </div>
+          <InlineNote role="status" tone="warn" title={`Looks like: ${first.title}`}>
+            <div className="mt-2">
+              <StepBody step={first} />
+            </div>
+          </InlineNote>
         )}
         <div className="space-y-2">
           {STEPS.filter((s) => s.id !== matched).map((s) => (
-            <details key={s.id} className="rounded-md border border-zinc-800">
-              <summary className="min-h-11 cursor-pointer select-none px-3 py-2.5 text-sm font-medium">{s.title}</summary>
-              <div className="px-3 pb-3">
-                <StepBody step={s} />
-              </div>
-            </details>
+            <Disclosure key={s.id} variant="inset" summary={s.title}>
+              <StepBody step={s} />
+            </Disclosure>
           ))}
         </div>
         {status !== "idle" && status !== "connected" && <CopyDiagnostics />}
       </div>
-    </details>
+    </Disclosure>
   );
 }

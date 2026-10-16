@@ -7,6 +7,7 @@ import { SimulatorTransport } from "../transport/SimulatorTransport";
 import { combineStatus, decodeMonitorStatus } from "./readiness";
 import { toCsv, toJson, toReport } from "./report";
 import { clearCodes, decodeFreezeValue, readScan, type Scan } from "./scan";
+import { clearFile, parseScanFile, readFile, scanFileName } from "./scanFile";
 
 async function connectSim() {
   let t = 30;
@@ -197,5 +198,48 @@ describe("export", () => {
     expect(lines).toContain("freeze_frame,Engine load,23.53,%");
     expect(lines).toContain('error,,"Permanent codes (0A): 0A: TIMEOUT, ""x""",');
     for (const l of lines.slice(1)) expect(l.split(",").length).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe("scan files (folder storage contract)", () => {
+  const scan: Scan = {
+    at: Date.UTC(2026, 9, 16, 8, 30, 5, 250),
+    vin: SIM_VIN,
+    status: decodeMonitorStatus([0x82, 0x07, 0x65, 0x00]),
+    thisCycle: null,
+    stored: ["P0133", "P0420"],
+    pending: ["P0300"],
+    permanent: ["P0420"],
+    freezeFrame: null,
+    errors: [],
+  };
+  const after: Scan = { ...scan, at: scan.at + 4000, stored: [], pending: [], afterClear: true };
+
+  it("names files scans/<YYYY-MM-DDTHH-mm-ssZ>_<VIN or NOVIN>.json", () => {
+    expect(scanFileName(scan.at, SIM_VIN)).toBe("2026-10-16T08-30-05Z_SIMULATOR0VIN0001.json");
+    expect(scanFileName(scan.at, null)).toBe("2026-10-16T08-30-05Z_NOVIN.json");
+    expect(scanFileName(scan.at, "../AB C")).toBe("2026-10-16T08-30-05Z_ABC.json");
+  });
+
+  it("starts every file with format, version, takenAt, vin, kind", () => {
+    const read = JSON.parse(JSON.stringify(readFile(scan)));
+    expect(Object.keys(read).slice(0, 5)).toEqual(["format", "version", "takenAt", "vin", "kind"]);
+    expect(read).toMatchObject({ format: "obd-dash-scan", version: 1, takenAt: "2026-10-16T08:30:05.250Z", vin: SIM_VIN, kind: "read" });
+    const clear = JSON.parse(JSON.stringify(clearFile(scan, after)));
+    expect(Object.keys(clear).slice(0, 5)).toEqual(["format", "version", "takenAt", "vin", "kind"]);
+    expect(clear).toMatchObject({ kind: "clear", takenAt: "2026-10-16T08:30:09.250Z" });
+    expect(clear.before.stored).toEqual(["P0133", "P0420"]);
+    expect(clear.after.stored).toEqual([]);
+  });
+
+  it("round-trips through parseScanFile and rejects files that aren't ours", () => {
+    expect(parseScanFile(JSON.stringify(readFile(scan)))).toEqual(readFile(scan));
+    expect(parseScanFile(JSON.stringify(clearFile(scan, after)))).toEqual(clearFile(scan, after));
+    expect(() => parseScanFile("nope")).toThrow("not valid JSON");
+    expect(() => parseScanFile("null")).toThrow("not an OBD Dash scan file");
+    expect(() => parseScanFile(JSON.stringify({ ...readFile(scan), version: 2 }))).toThrow("version 2");
+    const damaged = { ...readFile(scan), scan: { ...scan, stored: "P0133" } };
+    expect(() => parseScanFile(JSON.stringify(damaged))).toThrow("damaged");
+    expect(() => parseScanFile(JSON.stringify({ ...clearFile(scan, after), after: null }))).toThrow("damaged");
   });
 });

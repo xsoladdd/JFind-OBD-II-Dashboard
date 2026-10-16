@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { deleteScan, listScans, saveScan } from "../diagnostics/history";
 import { clearCodes, readScan, type ClearOutcome, type Scan } from "../diagnostics/scan";
 import { getClient } from "./connection";
 
@@ -10,29 +9,20 @@ interface DiagnosticsState {
   viewing: Scan | null;
   reading: boolean;
   error: string;
-  history: Scan[];
   clearing: boolean;
   outcome: ClearOutcome | null;
   clearError: string;
   read: () => Promise<void>;
   clear: () => Promise<void>;
   resetClear: () => void;
-  loadHistory: () => Promise<void>;
   open: (scan: Scan | null) => void;
-  remove: (at: number) => Promise<void>;
 }
 
 const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-export const useDiagnostics = create<DiagnosticsState>((set, get) => {
+export const useDiagnostics = create<DiagnosticsState>((set) => {
   const keep = async (scan: Scan) => {
     set({ live: scan, viewing: null });
-    try {
-      await saveScan(scan);
-      await get().loadHistory();
-    } catch (e) {
-      set({ error: `Scan not saved to history: ${errMsg(e)}` });
-    }
   };
 
   return {
@@ -40,7 +30,6 @@ export const useDiagnostics = create<DiagnosticsState>((set, get) => {
     viewing: null,
     reading: false,
     error: "",
-    history: [],
     clearing: false,
     outcome: null,
     clearError: "",
@@ -75,24 +64,6 @@ export const useDiagnostics = create<DiagnosticsState>((set, get) => {
 
     resetClear: () => set({ outcome: null, clearError: "" }),
 
-    async loadHistory() {
-      try {
-        set({ history: await listScans() });
-      } catch (e) {
-        set({ error: `History unavailable: ${errMsg(e)}` });
-      }
-    },
-
     open: (scan) => set({ viewing: scan }),
-
-    async remove(at) {
-      try {
-        await deleteScan(at);
-        if (get().viewing?.at === at) set({ viewing: null });
-        await get().loadHistory();
-      } catch (e) {
-        set({ error: errMsg(e) });
-      }
-    },
   };
 });

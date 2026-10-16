@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useHasBluetooth } from "@/components/connect/hooks";
 import type { Scan } from "@/lib/diagnostics/scan";
 import { useConnection } from "@/lib/store/connection";
@@ -14,7 +14,6 @@ import { Readiness } from "./Readiness";
 
 const CARD = "rounded-lg border border-zinc-800 bg-zinc-900 p-4";
 const when = (at: number) => new Date(at).toLocaleString();
-const count = (l: string[] | null) => l?.length ?? "?";
 
 /** There is no app shell yet, so the page can connect by itself (same store as the Connect screen). */
 function ConnectPrompt() {
@@ -24,7 +23,7 @@ function ConnectPrompt() {
   return (
     <section className={CARD}>
       <p className="text-sm text-zinc-300">
-        {busy ? "Connecting…" : "Connect to the adapter to read codes. Saved scans below work offline."}
+        {busy ? "Connecting…" : "Connect to the adapter to read codes."}
       </p>
       {error && <p className="mt-2 text-sm text-red-300">{error}</p>}
       <div className="mt-3 flex flex-col gap-2 sm:flex-row">
@@ -83,62 +82,11 @@ function Summary({ scan }: { scan: Scan }) {
   );
 }
 
-function History() {
-  const { history, viewing, live, open, remove } = useDiagnostics();
-  if (!history.length) return null;
-  return (
-    <section className={CARD}>
-      <h2 className="text-lg font-semibold">Scan history</h2>
-      <p className="text-sm text-zinc-400">Saved on this device only.</p>
-      <ul className="mt-3 divide-y divide-zinc-800">
-        {history.map((s) => {
-          const shown = (viewing ?? live)?.at === s.at;
-          return (
-            <li key={s.at} className="space-y-2 py-3">
-              <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                <span className="font-medium">
-                  {when(s.at)}
-                  {s.afterClear && <span className="ml-2 text-xs text-sky-300">after clear</span>}
-                </span>
-                <span className="font-mono text-xs text-zinc-400">{s.vin ?? "no VIN"}</span>
-              </div>
-              <p className="text-sm text-zinc-400">
-                {count(s.stored)} stored · {count(s.pending)} pending · {count(s.permanent)} permanent
-                {s.status?.mil && <span className="ml-2 text-amber-300">CEL on</span>}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => open(s.at === live?.at ? null : s)}
-                  disabled={shown}
-                  className="rounded-md border border-zinc-600 px-3 py-2 text-sm font-medium hover:bg-zinc-800 disabled:opacity-40"
-                >
-                  {shown ? "Showing" : "Open"}
-                </button>
-                <ExportButtons scan={s} print={false} />
-                <button
-                  onClick={() => window.confirm(`Delete the scan from ${when(s.at)}? This can't be undone.`) && void remove(s.at)}
-                  className="rounded-md border border-red-800 px-3 py-2 text-sm font-medium text-red-300 hover:bg-red-950"
-                >
-                  Delete
-                </button>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
-  );
-}
-
 export function DiagnosticsScreen() {
   const connected = useConnection((s) => s.status === "connected");
-  const { live, viewing, reading, error, read, open, loadHistory } = useDiagnostics();
+  const { live, viewing, reading, error, read, open } = useDiagnostics();
   const [clearOpen, setClearOpen] = useState(false);
   const scan = viewing ?? live;
-
-  useEffect(() => {
-    void loadHistory();
-  }, [loadHistory]);
 
   return (
     <main className="mx-auto w-full max-w-4xl space-y-4 px-4 py-6">
@@ -198,7 +146,6 @@ export function DiagnosticsScreen() {
         connected && <p className="text-sm text-zinc-400">Turn the key to ON and tap Read codes.</p>
       )}
 
-      <History />
       <ClearDialog open={clearOpen} onClose={() => setClearOpen(false)} />
     </main>
   );

@@ -18,24 +18,12 @@ import {
 import { readOdometer } from "../garage/odometer";
 import { readVin } from "../obd/requests";
 import { withPollingPaused } from "../polling/pause";
+import { getSetting, setSetting, subscribeSettings } from "../storage/settings";
 import { getClient, useConnection } from "./connection";
 
-const ACTIVE_KEY = "obd-dash.garage.active";
-const readActive = () => {
-  try {
-    return localStorage.getItem(ACTIVE_KEY);
-  } catch {
-    return null;
-  }
-};
-const writeActive = (id: string | null) => {
-  try {
-    if (id) localStorage.setItem(ACTIVE_KEY, id);
-    else localStorage.removeItem(ACTIVE_KEY);
-  } catch {
-    /* private mode: the choice just isn't remembered */
-  }
-};
+// The active car is a setting ("garage.activeId" in settings.json); the cars themselves stay in IndexedDB.
+const readActive = () => getSetting<string | null>("garage.activeId", null);
+const writeActive = (id: string | null) => setSetting("garage.activeId", id);
 
 const uid = () => crypto.randomUUID();
 const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -235,6 +223,12 @@ export const useGarageDueCount = () =>
 // Imported by the Garage page and the nav badge, so it runs wherever either is mounted.
 if (typeof window !== "undefined") {
   void useGarage.getState().load();
+  // settings.json loads after the folder is restored, which may be after the cars: apply its active car then.
+  subscribeSettings(() => {
+    const s = useGarage.getState();
+    const id = readActive();
+    if (id !== s.activeId && pick(s.profiles, id)) useGarage.setState({ activeId: id, activeProfile: pick(s.profiles, id) });
+  });
   let was = useConnection.getState().status;
   if (was === "connected") void useGarage.getState().identifyCar();
   useConnection.subscribe((s) => {

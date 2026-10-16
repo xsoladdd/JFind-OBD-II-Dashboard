@@ -1,5 +1,7 @@
 "use client";
 
+import { FolderCard } from "@/components/storage/FolderCard";
+import { useFolder } from "@/lib/storage/folder";
 import { useConnection } from "@/lib/store/connection";
 import { CompatBanner } from "./CompatBanner";
 import { DebugConsole } from "./DebugConsole";
@@ -18,6 +20,12 @@ export function ConnectScreen() {
   const hasBt = useHasBluetooth();
   const { status, connect } = useConnection();
   const busy = status === "connecting" || status === "reconnecting";
+  const start = (mode: "ble" | "demo") => {
+    void connect(mode); // first, so the Bluetooth chooser gets this tap's user gesture
+    // The tap is a gesture too: use it to ask for the folder again (browsers forget the grant between visits).
+    const folder = useFolder.getState();
+    if (folder.status === "needs-permission") void folder.regrant();
+  };
 
   return (
     <main className="mx-auto w-full max-w-2xl space-y-4 px-4 py-6">
@@ -36,14 +44,14 @@ export function ConnectScreen() {
         </ol>
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
           <button
-            onClick={() => void connect("ble")}
+            onClick={() => start("ble")}
             disabled={!hasBt || busy}
             className="rounded-md bg-sky-600 px-5 py-3 font-semibold hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Connect
           </button>
           <button
-            onClick={() => void connect("demo")}
+            onClick={() => start("demo")}
             disabled={busy}
             className="rounded-md border border-zinc-600 px-5 py-3 font-semibold hover:bg-zinc-800 disabled:opacity-40"
           >
@@ -53,6 +61,7 @@ export function ConnectScreen() {
       </section>
 
       <StatusCard />
+      <FolderCard />
       <DebugConsole />
       <UuidSettings />
     </main>

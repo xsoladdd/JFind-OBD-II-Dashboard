@@ -1,28 +1,23 @@
-/** User overrides for the GATT UUIDs, persisted per browser. Empty strings mean "auto-pick". */
+import { getSetting, setSetting } from "../storage/settings";
+
+/** User overrides for the GATT UUIDs, saved as "ble.uuids" in settings.json. Empty strings mean "auto-pick". */
 export interface UuidOverrides {
   service: string;
   notify: string;
   write: string;
 }
 
-const KEY = "obd-dash.uuids";
 export const EMPTY_OVERRIDES: UuidOverrides = { service: "", notify: "", write: "" };
 
 export function loadOverrides(): UuidOverrides {
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? { ...EMPTY_OVERRIDES, ...(JSON.parse(raw) as Partial<UuidOverrides>) } : EMPTY_OVERRIDES;
-  } catch {
-    return EMPTY_OVERRIDES;
-  }
+  // settings.json is user-editable: keep only string fields.
+  const o = getSetting<Partial<Record<keyof UuidOverrides, unknown>> | null>("ble.uuids", null) ?? {};
+  const str = (v: unknown) => (typeof v === "string" ? v : "");
+  return { service: str(o.service), notify: str(o.notify), write: str(o.write) };
 }
 
 export function saveOverrides(o: UuidOverrides) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(o));
-  } catch {
-    // storage blocked (private mode): the override then only lasts for this page view
-  }
+  setSetting("ble.uuids", o);
 }
 
 /** "fff1", "0xFFF1" or a full 128-bit UUID → canonical lowercase 128-bit form. */

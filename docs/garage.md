@@ -14,7 +14,7 @@ const { profiles, activeProfile, activeId, services, reminders, detectedVin } = 
 | --- | --- |
 | `profiles: CarProfile[]` | All cars. |
 | `activeProfile: CarProfile \| null` | The selected car. Trips read `fuelType`, `fuelPrice`, `currency` and `vin` from here. |
-| `activeId`, `loaded`, `error` | Selected id (remembered in `localStorage` `obd-dash.garage.active`), IndexedDB loaded flag, last storage error. |
+| `activeId`, `loaded`, `error` | Selected id (remembered as `garage.activeId` in `settings.json`, see [storage.md](storage.md)), IndexedDB loaded flag, last storage error. |
 | `services`, `reminders` | All entries; filter by `carId`. |
 | `detectedVin` | VIN read from the connected car that matches no profile (the UI offers to create one). |
 

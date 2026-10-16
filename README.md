@@ -50,7 +50,7 @@ The adapter's GATT layout is not documented, so the app probes a list of common 
 4. If the adapter's service is not in the candidate list, it won't show up at all, because Web Bluetooth only exposes services listed in `optionalServices`. Enter the service UUID in Settings anyway: it is added to the list on the next Connect. Tools like nRF Connect can show the UUID.
 5. Please report what you find so the defaults can be updated (`lib/transport/WebBluetoothTransport.ts`).
 
-The overrides live in `localStorage` (`obd-dash.uuids`) for that browser only.
+The overrides are saved as `ble.uuids` in `settings.json` in the folder you link (see [docs/storage.md](docs/storage.md)).
 
 The raw terminal sends any AT/OBD command and shows the replies exactly as they arrive. `␍` and `␊` mark CR and LF, and each `←` line is one BLE notification.
 
@@ -72,6 +72,8 @@ Live dashboard, polling Scheduler and live-data API: see [docs/dashboard.md](doc
 
 Advanced diagnostics (`/ecu`: Mode 06, codes per module, Mode 09, battery test): see [docs/ecu.md](docs/ecu.md).
 Custom dashboard builder and alerts (`/alerts`): see [docs/custom-dashboard-and-alerts.md](docs/custom-dashboard-and-alerts.md).
+
+Folder storage (`settings.json`, scan history, debug logs, `/history`): see [docs/storage.md](docs/storage.md).
 
 ## [verify] list
 
@@ -107,6 +109,9 @@ Things I couldn't confirm without the hardware or an authoritative source:
 - [ ] **RPM with the engine off**: clearing needs `010C` to read exactly 0. If an ECU answers NO DATA with the engine off, clearing stays blocked. Confirm on real cars.
 - [ ] **Alert examples**: every number in the example rules is a placeholder to adjust per car: coolant above 110 °C (hysteresis 3 °C, 5 s), adapter voltage below 12.0 V (0.3 V, 10 s), RPM above the redline setting (300 rpm, 0 s).
 - [ ] **Alert sound and vibration on phones**: check that the beep plays after the Connect tap on Android Chrome and on iOS (Bluefy), and that it vibrates on Android. iOS has no Vibration API.
+- [ ] **Folder picker on Android Chrome**: whether `showDirectoryPicker` exists there. The app feature-detects it, and without it it shows the "can't be saved" banner.
+- [ ] **Folder re-permission on the Connect tap**: Connect starts the Bluetooth chooser first, then asks for folder access with the same tap. Check on a real device that the two prompts don't interfere. If the folder prompt fails, the **Allow access** button still works.
+- [ ] **Bluefy (iOS)**: assumed to have no folder picker, so settings last only for the session there. Older `localStorage` overrides are still read.
 
 ## Phase 2 / 3 (not built yet)
 

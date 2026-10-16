@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getCustomLayouts } from "../store/settings";
-import { setSetting } from "../store/localSettings";
+import { setSetting } from "../storage/settings";
 import {
   activeLayout,
   addLayout,
@@ -74,13 +74,13 @@ describe("custom layouts", () => {
   });
 
   it("round-trips through the settings store", () => {
-    const data = new Map<string, string>();
-    vi.stubGlobal("localStorage", { getItem: (k: string) => data.get(k) ?? null, setItem: (k: string, v: string) => data.set(k, v) });
     expect(getCustomLayouts()).toBe(EMPTY_LAYOUTS);
     const { s, id } = sample();
     const saved = updateWidget(s, id, activeLayout(s)!.widgets[2]!.id, { size: "2x2", kind: "gauge" });
     setSetting("dashboard.customLayouts", saved);
     expect(getCustomLayouts()).toEqual(saved);
     expect(getCustomLayouts()).toBe(getCustomLayouts());
+    setSetting("dashboard.customLayouts", "hand-edited nonsense"); // settings.json is user-editable
+    expect(getCustomLayouts()).toBe(EMPTY_LAYOUTS);
   });
 });

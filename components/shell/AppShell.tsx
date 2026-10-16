@@ -2,6 +2,8 @@
 
 import { Suspense, useEffect, type ReactNode } from "react";
 import { AlertIndicator } from "@/components/alerts/AlertIndicator";
+import { initFolder } from "@/lib/storage/folder";
+import { startLogRecorder } from "@/lib/storage/logs";
 import { watchConnection } from "@/lib/store/toasts";
 import { ConnectionChip } from "./ConnectionChip";
 import { NavLinks } from "./NavLinks";
@@ -11,7 +13,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator)
       navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" }).catch(() => {});
-    return watchConnection();
+    void initFolder();
+    const stopLogs = startLogRecorder();
+    const stopToasts = watchConnection();
+    return () => {
+      stopLogs();
+      stopToasts();
+    };
   }, []);
 
   // usePathname may suspend under cacheComponents on dynamic routes other workers add; keep the shell prerendered.

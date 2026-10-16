@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { visible } from "@/lib/storage/logs";
 import { useConnection, type LogLine } from "@/lib/store/connection";
 
 const QUICK = ["ATI", "ATRV", "ATDPN", "0100", "010C", "010D", "03", "0902"];
@@ -11,9 +12,6 @@ const COLOR: Record<LogLine["dir"], string> = {
   info: "text-emerald-300",
   error: "text-red-300",
 };
-
-// Make chunk boundaries and line endings visible: that's what you need when the adapter misbehaves.
-const visible = (t: string) => t.replace(/\r/g, "␍").replace(/\n/g, "␊");
 
 export function DebugConsole() {
   const { log, gatt, selected, mode, sendRaw, clearLog } = useConnection();

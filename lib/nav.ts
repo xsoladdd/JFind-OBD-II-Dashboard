@@ -5,4 +5,5 @@ export const NAV: { href: string; label: string }[] = [
   { href: "/garage", label: "Garage" },
   { href: "/ecu", label: "ECU" },
   { href: "/alerts", label: "Alerts" },
+  { href: "/history", label: "History" },
 ];

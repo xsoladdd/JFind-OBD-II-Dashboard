@@ -1,6 +1,7 @@
 import { afterAll, describe, expect, it, vi } from "vitest";
 import { parseScanFile } from "../diagnostics/scanFile";
 import { SIM_DTCS } from "../sim/elm327";
+import { FakeDir } from "../storage/fakeFs";
 import { readText, useFolder } from "../storage/folder";
 import { SimulatorTransport } from "../transport/SimulatorTransport";
 import { getClient, useConnection } from "./connection";
@@ -13,6 +14,7 @@ describe("diagnostics store + folder storage", () => {
   afterAll(() => useConnection.getState().disconnect());
 
   it("saves one file per read and per clear run, lists them, and opens them by name", async () => {
+    vi.stubGlobal("showDirectoryPicker", async () => new FakeDir("Test folder"));
     await useFolder.getState().link();
     await useConnection.getState().connect("demo");
     (getClient()!.transport as SimulatorTransport).emulator.engineRunning = false;

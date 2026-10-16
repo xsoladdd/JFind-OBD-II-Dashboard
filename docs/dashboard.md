@@ -71,7 +71,7 @@ Each persisted setting has its own hook in `lib/store/settings.ts`, which return
 | `useCustomLayouts()` | `dashboard.customLayouts` | `{ active: "", layouts: [] }` |
 | `useAlertRules()` | `alerts.rules` | `[]` |
 
-For now they're backed by `lib/store/localSettings.ts`, a localStorage stand-in with the same `getSetting` / `setSetting` / `useSetting` signatures as JOID-0006's `lib/storage/settings.ts` (settings.json in a folder the user picks). Switching is the one import line in `lib/store/settings.ts`; after that, delete the stand-in.
+They're backed by `lib/storage/settings.ts`: `settings.json` in the folder the user picks (see [storage.md](storage.md)).
 
 Convert at display time:
 

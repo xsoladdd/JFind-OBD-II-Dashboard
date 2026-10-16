@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSetting } from "@/lib/storage/settings";
 import { EMPTY_OVERRIDES, loadOverrides, saveOverrides, type UuidOverrides } from "@/lib/transport/uuidSettings";
 import { useMounted } from "./hooks";
 
@@ -12,11 +13,13 @@ const FIELDS: { key: keyof UuidOverrides; label: string; hint: string }[] = [
 
 export function UuidSettings() {
   const mounted = useMounted();
+  const [stored] = useSetting<unknown>("ble.uuids", null);
   return (
     <details className="rounded-lg border border-zinc-800 bg-zinc-900">
       <summary className="cursor-pointer select-none px-4 py-3 font-semibold">Settings: Bluetooth UUIDs</summary>
-      {/* localStorage only exists in the browser, so the form renders after hydration. */}
-      {mounted && <UuidForm />}
+      {/* Settings load in the browser (and settings.json later still), so the form renders after hydration and
+          starts over when the stored value changes. */}
+      {mounted && <UuidForm key={JSON.stringify(stored)} />}
     </details>
   );
 }

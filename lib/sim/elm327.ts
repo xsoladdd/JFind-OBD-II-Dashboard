@@ -38,7 +38,14 @@ const ENCODERS: Record<number, (e: EngineState) => number[]> = {
 
 export const SIM_VIN = "SIMULATOR0VIN0001"; // deliberately not a real VIN
 export const SIM_DTCS = { stored: ["P0133", "P0420"], pending: ["P0300"], permanent: ["P0420"] };
-const FREEZE_PIDS = [0x04, 0x05, 0x0c, 0x0d, 0x11];
+const FREEZE_PIDS = [0x04, 0x05, 0x06, 0x07, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11];
+
+// --- Diagnostics (phase 2) ---
+// Readiness bytes B, C, D of PID 01/41 (SAE J1979 layout): spark ignition; misfire, fuel system and components
+// supported; catalyst, EVAP, O2 sensor and O2 heater supported (C = 0x65). Demo data, not from a real car.
+const MON_B = 0x07;
+const MON_C = 0x65;
+const ENGINE_OFF = { rpm: 0, speed: 0, throttle: 0, load: 0, maf: 0, fuelRate: 0 };
 
 /** Bitmask for range base: bits for supported PIDs in base+1..base+0x20, last bit = next range exists. */
 export function bitmask(base: number, supported: number[]): number[] {
@@ -76,6 +83,10 @@ export class Elm327Emulator {
   private rand: () => number;
   private clock: () => number;
   private unsupported: number[];
+  /** Diagnostics (phase 2): false = key on, engine off (RPM 0). Demo mode toggles it before a Mode 04 clear. */
+  engineRunning = true;
+  /** Diagnostics (phase 2): set by Mode 04, which resets the non-continuous monitors (byte D) to incomplete. */
+  private monitorsReset = false;
 
   constructor(opts: Elm327Options = {}) {
     this.rand = rng(opts.seed ?? 1);
@@ -95,7 +106,7 @@ export class Elm327Emulator {
   }
 
   get supportedPids(): number[] {
-    return [0x01, ...Object.keys(ENCODERS).map(Number)].filter((p) => !this.unsupported.includes(p)).sort((a, b) => a - b);
+    return [0x01, 0x41, ...Object.keys(ENCODERS).map(Number)].filter((p) => !this.unsupported.includes(p)).sort((a, b) => a - b);
   }
 
   private at(cmd: string): string[] {
@@ -149,12 +160,14 @@ export class Elm327Emulator {
   private answer([mode, pid, frameNo]: number[]): number[] | null {
     const extra = garageAnswer(mode!, pid);
     if (extra) return extra;
-    const e = engineAt(this.clock(), this.rand);
+    const e = { ...engineAt(this.clock(), this.rand), ...(this.engineRunning ? {} : ENGINE_OFF) };
     switch (mode) {
       case 0x01:
         if (pid === undefined) return null;
         if (pid % 0x20 === 0) return pid <= 0x40 ? [0x41, pid, ...bitmask(pid, this.supportedPids)] : null;
-        if (pid === 0x01) return [0x41, 0x01, (this.stored.length ? 0x80 : 0) | this.stored.length, 0x07, 0x65, 0x00];
+        if (pid === 0x01)
+          return [0x41, 0x01, (this.stored.length ? 0x80 : 0) | this.stored.length, MON_B, MON_C, this.monitorsReset ? MON_C : 0x00];
+        if (pid === 0x41) return [0x41, 0x41, 0x00, MON_B, MON_C, this.monitorsReset ? MON_C : 0x04]; // EVAP still running this drive cycle
         return ENCODERS[pid] && !this.unsupported.includes(pid) ? [0x41, pid, ...ENCODERS[pid](e)] : null;
       case 0x02: {
         if (pid === undefined || !this.freeze || (frameNo !== undefined && frameNo !== 0x00)) return null;
@@ -172,6 +185,7 @@ export class Elm327Emulator {
         this.stored = [];
         this.pending = [];
         this.freeze = null; // permanent codes survive a clear, as on a real car
+        this.monitorsReset = true;
         return [0x44];
       case 0x09:
         if (pid === 0x02) return [0x49, 0x02, 0x01, ...[...SIM_VIN].map((c) => c.charCodeAt(0))];

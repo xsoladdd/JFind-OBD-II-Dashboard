@@ -4,6 +4,8 @@ A client-only web app for the JF327 (an ELM327-style Bluetooth LE OBD-II adapter
 
 **Status: phase 1.** This phase covers the transport and ELM layer, OBD decoding, a full ELM327 simulator and the connect screen with a raw debug console. The Diagnostics page (phase 2) and the dashboard themes (phase 3) are not built yet.
 
+**Diagnostics** (`/diagnostics`): codes, freeze frame, readiness, safe clear, export, scan history. See [docs/diagnostics.md](docs/diagnostics.md).
+
 ## Setup
 
 ```bash
@@ -81,7 +83,6 @@ Things I couldn't confirm without the hardware or an authoritative source:
 - [ ] **Init timing**: some clones need a pause after `ATZ`. The client just waits up to 10 s for the `>` prompt. Check the log for garbage after `ATZ`.
 - [ ] **Protocol**: which protocol your car reports via `ATDPN` (shown on the connect screen). The parsers assume header-less replies (`ATH0`) and handle CAN and legacy multi-line formats.
 - [ ] **Bluefy on iOS**: assumed to work like Chrome's Web Bluetooth. Untested.
-- [ ] **DTC descriptions** (phase 2): the generic SAE J2012 P0xxx table still needs a data source with a compatible licence. Until then every code shows "Manufacturer-specific / unknown"; descriptions are never guessed.
 - [ ] **Odometer PID 01A6** (Garage): which cars report it, and that the 0.1 km/bit decode (SAE J1979) matches. Many cars don't; the app falls back to manual entry.
 - [ ] **Garage VIN auto-select**: needs Mode 09 PID 02 on the real car; if the JF327/car doesn't answer, the user selects the car by hand.
 - [ ] **Garage due-soon windows**: 30 days / 1000 km are app defaults, not manufacturer intervals.
@@ -99,6 +100,10 @@ Things I couldn't confirm without the hardware or an authoritative source:
 - [ ] **Dashboard warning zones** (phase 3): coolant hot at ≥ 110 °C and fuel low at ≤ 12 % are general guidance, not from a standard (`lib/dashboard/zones.ts`).
 - [ ] **Polling rate on a real JF327** (phase 3): Demo mode reaches about 40 Hz. Check the Hz readout on the dashboard with the real adapter.
 - [ ] **Wake Lock / Fullscreen / install on Bluefy (iOS)** (phase 3): untested. The HUD falls back to a full-window overlay without the Fullscreen API.
+- [ ] **DTC descriptions licence**: `lib/obd/dtc-p0.json` comes from [todrobbins/dtcdb](https://github.com/todrobbins/dtcdb) (MIT, @129a8cb). Its text derives from SAE J2012, which SAE holds the copyright to. Needs owner review. It covers P0100–P0804 only; everything else shows "Manufacturer-specific / unknown".
+- [ ] **Multi-ECU 0101**: MIL, DTC count and readiness are combined across all ECUs that answer (MIL ORed, counts summed, incomplete wins). Check against a car where the engine and transmission ECUs both reply.
+- [ ] **Readiness bit C4 (spark)**: labelled "Gasoline particulate filter" per the current J1979 table on Wikipedia. Older J1979 revisions may name it differently.
+- [ ] **RPM with the engine off**: clearing needs `010C` to read exactly 0. If an ECU answers NO DATA with the engine off, clearing stays blocked. Confirm on real cars.
 
 ## Phase 2 / 3 (not built yet)
 

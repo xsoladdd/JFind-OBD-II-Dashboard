@@ -1,3 +1,5 @@
+import P0 from "./dtc-p0.json";
+
 const LETTERS = "PCBU";
 
 /** Two DTC bytes → "P0133". Returns null for the 00 00 padding. */
@@ -15,8 +17,7 @@ export function encodeDtc(code: string): [number, number] {
   return [(letter << 6) | (d1 << 4) | d2, parseInt(code.slice(3, 5), 16)];
 }
 
-/** Phase 2 replaces this with the bundled SAE J2012 table. Never guess a description. */
+/** Generic P0xxx descriptions from todrobbins/dtcdb (see docs/diagnostics.md). Never guess a description. */
 export function describeDtc(code: string): string {
-  void code;
-  return "Manufacturer-specific / unknown";
+  return (P0 as Record<string, string>)[code.toUpperCase()] ?? "Manufacturer-specific / unknown";
 }

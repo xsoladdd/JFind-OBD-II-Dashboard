@@ -62,7 +62,7 @@ describe("DTC decoder", () => {
     expect(decodeDtc(0, 0)).toBeNull();
   });
   it("never invents a description", () => {
-    expect(describeDtc("P0133")).toBe("Manufacturer-specific / unknown");
+    expect(describeDtc("P1133")).toBe("Manufacturer-specific / unknown");
   });
 });
 

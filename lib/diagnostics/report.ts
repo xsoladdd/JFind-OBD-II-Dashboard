@@ -27,7 +27,7 @@ export function toReport(scan: Scan) {
 
 export const toJson = (scan: Scan) => JSON.stringify(toReport(scan), null, 2);
 
-const cell = (v: unknown) => {
+export const cell = (v: unknown) => {
   const s = v == null ? "" : String(v);
   return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };

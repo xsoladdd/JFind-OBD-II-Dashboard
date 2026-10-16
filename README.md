@@ -75,6 +75,8 @@ Custom dashboard builder and alerts (`/alerts`): see [docs/custom-dashboard-and-
 
 Folder storage (`settings.json`, scan history, Garage file, debug logs, `/history`; falls back to the browser's private storage where there is no folder picker): see [docs/storage.md](docs/storage.md).
 
+Code history (per-code timeline across saved scans, on `/diagnostics`): see [docs/code-history.md](docs/code-history.md).
+
 Trips (`/trips`: trip computer, performance timer, trip log and replay, GPS route): see [docs/trips.md](docs/trips.md).
 
 ## [verify] list
@@ -119,6 +121,8 @@ Things I couldn't confirm without the hardware or an authoritative source:
 - [ ] **Trip fuel estimate constants** (`lib/trips/fuel.ts`): petrol stoichiometric AFR 14.7:1 and density 745 g/L are approximations. Diesel without 015E shows "not available".
 - [ ] **Performance timer accuracy**: limited by how often the JF327 updates 010D (Demo mode gets about 6 speed readings/s alongside the other fast PIDs). OBD speed is whole km/h, and the start is the last 0 km/h reading.
 - [ ] **GPS accuracy and battery use** during trips on a real phone. Only tested with emulated positions.
+- [ ] **Code history rules** (`lib/diagnostics/history.ts`): "came back after clear", "cleared" and the status priority (active > permanent > pending, gone / unknown) are app logic, not from SAE J1979. Check they match how a mechanic reads a scan history.
+- [ ] **Demo P0133 return**: after a clear, Demo mode brings P0133 back as a pending code so the history has something to show. Not a real car's behaviour.
 
 ## Phase 2 / 3 (not built yet)
 

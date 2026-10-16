@@ -1,4 +1,5 @@
 import { encodeDtc } from "../obd/dtc";
+import { ReturnAfterClear } from "./codeHistory";
 import { hex2 } from "../obd/supported";
 import { batteryVolts, headerLines, mode06Reply, mode09Reply, type SimBattery } from "./advanced";
 import { engineAt, rng, type EngineState } from "./engine";
@@ -80,6 +81,7 @@ export class Elm327Emulator {
   private stored = [...SIM_DTCS.stored];
   private pending = [...SIM_DTCS.pending];
   private permanent = [...SIM_DTCS.permanent];
+  private returning = new ReturnAfterClear();
   private freeze: EngineState | null;
   private rand: () => number;
   private clock: () => number;
@@ -179,7 +181,7 @@ export class Elm327Emulator {
       case 0x03:
         return this.dtcReply(0x43, this.stored);
       case 0x07:
-        return this.dtcReply(0x47, this.pending);
+        return this.dtcReply(0x47, this.returning.pending(this.pending));
       case 0x0a:
         return this.dtcReply(0x4a, this.permanent);
       case 0x04:
@@ -187,6 +189,7 @@ export class Elm327Emulator {
         this.pending = [];
         this.freeze = null; // permanent codes survive a clear, as on a real car
         this.monitorsReset = true;
+        this.returning.cleared();
         return [0x44];
       case 0x09:
         if (pid === 0x02) return [0x49, 0x02, 0x01, ...[...SIM_VIN].map((c) => c.charCodeAt(0))];

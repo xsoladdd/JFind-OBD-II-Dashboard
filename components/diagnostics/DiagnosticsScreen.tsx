@@ -10,6 +10,7 @@ import { useFolder } from "@/lib/storage/folder";
 import { useConnection } from "@/lib/store/connection";
 import { shownScan, useDiagnostics } from "@/lib/store/diagnostics";
 import { ClearDialog } from "./ClearDialog";
+import { CodeHistory } from "./CodeHistory";
 import { CodeTabs } from "./CodeTabs";
 import { ExportButtons } from "./ExportButtons";
 import { PrintReport } from "./PrintReport";
@@ -247,6 +248,7 @@ export function DiagnosticsScreen() {
       )}
 
       <RecentScans />
+      <CodeHistory />
       <ClearDialog open={clearOpen} onClose={() => setClearOpen(false)} />
     </main>
   );

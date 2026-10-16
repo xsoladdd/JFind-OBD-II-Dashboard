@@ -55,6 +55,8 @@ export interface Elm327Options {
   seed?: number;
   /** Seconds since "engine start"; defaults to wall clock since construction. */
   clock?: () => number;
+  /** Dashboard tests: Mode 01 PIDs this "car" doesn't support (left out of the bitmask, answered NO DATA). */
+  unsupported?: number[];
 }
 
 /** A pure ELM327 v1.5 emulator on CAN 11/500: command text in, full reply text (with echo and `>`) out. */
@@ -73,11 +75,13 @@ export class Elm327Emulator {
   private freeze: EngineState | null;
   private rand: () => number;
   private clock: () => number;
+  private unsupported: number[];
 
   constructor(opts: Elm327Options = {}) {
     this.rand = rng(opts.seed ?? 1);
     const start = Date.now();
     this.clock = opts.clock ?? (() => (Date.now() - start) / 1000);
+    this.unsupported = opts.unsupported ?? [];
     this.freeze = engineAt(32, rng(7)); // the "moment" P0133 was set, mid-cruise
   }
 
@@ -91,7 +95,7 @@ export class Elm327Emulator {
   }
 
   get supportedPids(): number[] {
-    return [0x01, ...Object.keys(ENCODERS).map(Number)].sort((a, b) => a - b);
+    return [0x01, ...Object.keys(ENCODERS).map(Number)].filter((p) => !this.unsupported.includes(p)).sort((a, b) => a - b);
   }
 
   private at(cmd: string): string[] {
@@ -151,7 +155,7 @@ export class Elm327Emulator {
         if (pid === undefined) return null;
         if (pid % 0x20 === 0) return pid <= 0x40 ? [0x41, pid, ...bitmask(pid, this.supportedPids)] : null;
         if (pid === 0x01) return [0x41, 0x01, (this.stored.length ? 0x80 : 0) | this.stored.length, 0x07, 0x65, 0x00];
-        return ENCODERS[pid] ? [0x41, pid, ...ENCODERS[pid](e)] : null;
+        return ENCODERS[pid] && !this.unsupported.includes(pid) ? [0x41, pid, ...ENCODERS[pid](e)] : null;
       case 0x02: {
         if (pid === undefined || !this.freeze || (frameNo !== undefined && frameNo !== 0x00)) return null;
         if (pid === 0x00) return [0x42, 0x00, 0x00, ...bitmask(0, [0x02, ...FREEZE_PIDS])];

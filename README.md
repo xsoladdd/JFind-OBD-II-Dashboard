@@ -66,6 +66,7 @@ components/connect/  Connect screen, status, debug console, UUID settings
 Layers only depend downward (store → elm → transport, obd → elm types), and everything below `components/` is plain TypeScript tested with Vitest.
 
 Garage (car profiles, service log, reminders): see [docs/garage.md](docs/garage.md).
+Live dashboard, polling Scheduler and live-data API: see [docs/dashboard.md](docs/dashboard.md).
 
 Advanced diagnostics (`/ecu`: Mode 06, codes per module, Mode 09, battery test): see [docs/ecu.md](docs/ecu.md).
 
@@ -94,6 +95,10 @@ Things I couldn't confirm without the hardware or an authoritative source:
 - [ ] **Battery bands** (general 12 V lead-acid guidance, not manufacturer specs): resting 12.6 / 12.4 / 12.0 V, cranking 9.6 V, charging 13.2 V and 14.8 V.
 - [ ] **ATRV accuracy**: the adapter measures at OBD pin 16, not at the battery terminals. Compare it with a multimeter on the JF327.
 - [ ] **ATRV sample rate over BLE**: how many readings per second the crank window really gets on the JF327. A shorter dip than that is missed.
+- [ ] **Dashboard redline** (phase 3): the default of 6500 rpm is a placeholder. Set your car's redline in the dashboard header.
+- [ ] **Dashboard warning zones** (phase 3): coolant hot at ≥ 110 °C and fuel low at ≤ 12 % are general guidance, not from a standard (`lib/dashboard/zones.ts`).
+- [ ] **Polling rate on a real JF327** (phase 3): Demo mode reaches about 40 Hz. Check the Hz readout on the dashboard with the real adapter.
+- [ ] **Wake Lock / Fullscreen / install on Bluefy (iOS)** (phase 3): untested. The HUD falls back to a full-window overlay without the Fullscreen API.
 
 ## Phase 2 / 3 (not built yet)
 

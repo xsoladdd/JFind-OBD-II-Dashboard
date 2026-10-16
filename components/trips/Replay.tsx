@@ -20,7 +20,7 @@ export function Replay({ summary, csv }: { summary: TripSummary; csv: string }) 
   const data = useMemo(() => parseTripCsv(csv), [csv]);
   const n = data.t.length;
   const [idx, setIdx] = useState(0);
-  const others = summary.columns.map((c) => c.id).filter((id) => !MAIN.includes(id) && data.cols[id]?.some((v) => v !== null));
+  const others = summary.columns.map((c) => c.id).filter((id) => !MAIN.includes(id) && !liveDef(id)?.text && data.cols[id]?.some((v) => v !== null));
   const [picked, setPicked] = useState<string[]>(() => others.filter((id) => ["0105", "0111"].includes(id)).slice(0, 2));
   const [colourBy, setColourBy] = useState<"010D" | "010C">("010D");
 

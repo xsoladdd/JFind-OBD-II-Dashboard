@@ -12,6 +12,7 @@ A client-only web app for the JF327 (an ELM327-style Bluetooth LE OBD-II adapter
 - **Garage** (`/garage`): car profiles, service log and reminders. See [docs/garage.md](docs/garage.md).
 - **Trips** (`/trips`): trip computer, performance timer, trip log with replay, GPS route. See [docs/trips.md](docs/trips.md).
 - **History** (`/history`) and storage: `settings.json`, scan history, Garage file and debug logs in a folder you pick, or the browser's private storage where there is no folder picker. See [docs/storage.md](docs/storage.md).
+- **PIDs** (`/pids`): about 40 more standard Mode 01 readings, and your own custom PIDs (manufacturer Mode 21/22) with a safe formula parser, header switching, Test once and JSON import/export. See [docs/custom-pids.md](docs/custom-pids.md).
 
 On phones the bottom bar shows four main pages (Dashboard, Diagnostics, Garage, Trips) plus **More**, which lists the rest. The sidebar on larger screens lists everything. The page list lives in `lib/nav.ts`.
 
@@ -127,3 +128,8 @@ Things I couldn't confirm without the hardware or an authoritative source:
 - [ ] **Write method on the JF327**: whether it needs "with response" writes. The write method select in the adapter profile forces one; "auto" prefers "without response" when offered.
 - [ ] **Troubleshooting guide wording**: the steps are general ELM327 and Web Bluetooth guidance, not JF327-specific. Check they match what actually fixes problems on the JF327.
 - [ ] **Clipboard on Bluefy (iOS)**: whether **Copy diagnostics** can write to the clipboard there. If not, the text is shown in a box to copy by hand.
+- [ ] **Custom PID default header**: after a custom header, the app restores `ATSH7DF` on 11-bit CAN and `ATSHDB33F1` (= 18DB33F1 with ATCP's default priority 18) on 29-bit CAN, the ISO 15765-4 functional request IDs. Confirm on the JF327 that this behaves like "no header set" (a reconnect's `ATZ` clears it either way).
+- [ ] **ATSH on the JF327**: that it accepts 3-digit (11-bit) and 6-digit (29-bit) `ATSH`, and that replies to a physical request (e.g. 7E0) come back with the default receive filter. 8-digit 29-bit headers aren't supported.
+- [ ] **OBD standard (011C) names**: only codes 1–13 are named (from the Wikipedia J1979 reproduction); others show "Code N".
+- [ ] **O2 sensor numbering (0114–011B)**: shown as "O2 sensor 1–8". Which bank/sensor that is depends on whether the car reports 0113 (2 banks × 4) or 011D (4 banks × 2); see the "O2 sensors present" row.
+- [ ] **Mode 22 replies on a real car**: custom PIDs assume the reply is `<mode + 0x40> <PID bytes> <data>` on header-less (`ATH0`) lines, single or multi-frame. Check with a known PID from your car's documentation.

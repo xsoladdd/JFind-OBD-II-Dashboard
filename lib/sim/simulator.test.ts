@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ElmClient } from "../elm/ElmClient";
-import { PIDS } from "../obd/pids";
+import { cmdOf, PID_LIST } from "../obd/pids";
 import { clearDtcs, readDtcs, readPid, readVin } from "../obd/requests";
 import { discoverSupported } from "../obd/supported";
 import { SimulatorTransport } from "../transport/SimulatorTransport";
@@ -24,13 +24,21 @@ describe("simulator round trip", () => {
     const { client } = connectSim([1, 20]);
     await client.connect();
     const supported = await discoverSupported(client);
-    for (const id of Object.keys(PIDS)) expect(supported.has(id)).toBe(true);
-    for (const id of Object.keys(PIDS)) {
-      const v = await readPid(client, id);
-      expect(v).toBeGreaterThanOrEqual(PIDS[id]!.min);
-      expect(v).toBeLessThanOrEqual(PIDS[id]!.max);
+    // The demo car has 4 of the 8 O2 sensors (lib/sim/morePids.ts) and no throttle C / pedal F.
+    const absent = ["0116", "0117", "011A", "011B", "011D", "0148", "014B"];
+    const cmds = [...new Set(PID_LIST.map(cmdOf))];
+    expect(cmds.filter((c) => !supported.has(c))).toEqual(absent);
+    expect(supported.has("0161") && supported.has("0163")).toBe(true);
+    for (const def of PID_LIST.filter((p) => supported.has(cmdOf(p)))) {
+      const v = await readPid(client, def.id);
+      if (def.text) {
+        expect(def.text(v)).not.toMatch(/^Code /);
+        continue;
+      }
+      expect(v).toBeGreaterThanOrEqual(def.min);
+      expect(v).toBeLessThanOrEqual(def.max);
     }
-    await expect(client.send("0160")).rejects.toMatchObject({ code: "NO_DATA" });
+    await expect(client.send("0180")).rejects.toMatchObject({ code: "NO_DATA" });
   });
 
   it("reads, clears and re-reads DTCs; permanent codes survive", async () => {

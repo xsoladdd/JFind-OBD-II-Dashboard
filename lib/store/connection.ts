@@ -55,7 +55,8 @@ function decodeHint(cmd: string, lines: string[]): string {
   try {
     const msg = parseMessages(lines).find((m) => m[0] === 0x41 && m[1] === parseInt(cmd.slice(2), 16));
     if (!msg) return "";
-    return ` (${def.name}: ${+def.decode(msg.slice(2)).toFixed(2)} ${def.unit})`;
+    const v = def.decode(msg.slice(2));
+    return ` (${def.name}: ${def.text ? def.text(v) : `${+v.toFixed(2)} ${def.unit}`})`;
   } catch {
     return "";
   }

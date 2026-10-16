@@ -99,7 +99,7 @@ export function Engineer() {
                       type="checkbox"
                       checked={slot !== undefined}
                       onChange={() => toggle(id)}
-                      disabled={slot === undefined && Object.keys(shown).length >= MAX_SERIES}
+                      disabled={!!def?.text || (slot === undefined && Object.keys(shown).length >= MAX_SERIES)}
                       aria-label={`Chart ${def?.name ?? id}`}
                       style={slot !== undefined ? { accentColor: SERIES[slot] } : undefined}
                     />
@@ -111,10 +111,17 @@ export function Engineer() {
                       {id} · {unitOf(id)}
                     </span>
                   </td>
-                  <td className="px-2 py-1.5 text-right text-zinc-50">{show(id, v?.value)}</td>
-                  <td className="px-2 py-1.5 text-right text-zinc-400">{show(id, v?.min)}</td>
-                  <td className="px-2 py-1.5 text-right text-zinc-400">{show(id, v?.max)}</td>
-                  <td className="px-2 py-1.5 text-right text-zinc-400">{show(id, v && v.sum / v.count)}</td>
+                  {def?.text ? (
+                    // Enum / status PIDs: text across the stats columns; min, max and average of a code mean nothing.
+                    <td colSpan={4} className="px-2 py-1.5 text-right font-sans text-zinc-50">{v ? def.text(v.value) : "—"}</td>
+                  ) : (
+                    <>
+                      <td className="px-2 py-1.5 text-right text-zinc-50">{show(id, v?.value)}</td>
+                      <td className="px-2 py-1.5 text-right text-zinc-400">{show(id, v?.min)}</td>
+                      <td className="px-2 py-1.5 text-right text-zinc-400">{show(id, v?.max)}</td>
+                      <td className="px-2 py-1.5 text-right text-zinc-400">{show(id, v && v.sum / v.count)}</td>
+                    </>
+                  )}
                   <td className="hidden px-2 py-1.5 font-sans text-zinc-500 sm:table-cell">{unitOf(id)}</td>
                 </tr>
               );

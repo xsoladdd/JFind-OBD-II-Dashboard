@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Scan } from "@/lib/diagnostics/scan";
 import { describeDtc } from "@/lib/obd/dtc";
+import { PIDS } from "@/lib/obd/pids";
 
 const TABS = [
   {
@@ -95,7 +96,7 @@ export function CodeTabs({ scan }: { scan: Scan }) {
                               <div key={v.id} className="contents">
                                 <dt className="text-zinc-400">{v.name}</dt>
                                 <dd className="text-right font-mono">
-                                  {fmt(v.value)} {v.unit}
+                                  {PIDS[v.id]?.text?.(v.value) ?? `${fmt(v.value)} ${v.unit}`}
                                 </dd>
                               </div>
                             ))}

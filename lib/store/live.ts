@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { PIDS } from "../obd/pids";
+import { PIDS, type GaugeType } from "../obd/pids";
+import { getCustomPids } from "./settings";
 
 /**
  * Latest live values, written by the polling Scheduler (lib/polling) and read by every live feature.
@@ -30,7 +31,19 @@ const HISTORY_MAX = 300;
 
 /** Adapter voltage from ATRV, polled alongside the PIDs so it shares the same store. */
 export const ATRV = { id: "ATRV", name: "Adapter voltage (ATRV)", unit: "V", min: 0, max: 16 };
-export const liveDef = (id: string) => PIDS[id] ?? (id === ATRV.id ? ATRV : undefined);
+export interface LiveDef {
+  id: string;
+  name: string;
+  unit: string;
+  min: number;
+  max: number;
+  gauge?: GaugeType;
+  /** Set for enum / status PIDs: show text, keep out of gauges and alerts. */
+  text?: (v: number) => string;
+}
+/** Registry PIDs, ATRV, and the user's custom PIDs (lib/obd/custom.ts). */
+export const liveDef = (id: string): LiveDef | undefined =>
+  PIDS[id] ?? (id === ATRV.id ? ATRV : getCustomPids().find((c) => c.id === id));
 
 export const useLive = create<LiveState>((set) => ({
   supported: [],

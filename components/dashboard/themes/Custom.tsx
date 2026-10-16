@@ -99,7 +99,7 @@ export function Custom() {
     );
 
   const id = layout.id;
-  const options = supported.filter((p) => liveDef(p));
+  const options = supported.filter((p) => liveDef(p) && !liveDef(p)!.text); // status / enum PIDs aren't gauges
   const chosen = options.includes(pid) ? pid : (options[0] ?? "");
 
   return (

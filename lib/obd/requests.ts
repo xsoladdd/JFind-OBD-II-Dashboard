@@ -1,17 +1,24 @@
 import { ElmError } from "../elm/ElmClient";
-import { PIDS } from "./pids";
+import { cmdOf, PID_LIST, PIDS } from "./pids";
 import { parseDtcResponse, parseMessages, parseVin } from "./parse";
 
 type Sender = { send: (cmd: string, opts?: { timeoutMs?: number }) => Promise<string[]> };
+
+/** Sends one Mode 01 command and decodes every registry entry that shares it: [id, value] pairs. */
+export async function readCmd(client: Sender, cmd: string): Promise<[string, number][]> {
+  const defs = PID_LIST.filter((p) => cmdOf(p) === cmd);
+  if (!defs.length) throw new Error(`Unknown PID ${cmd}`);
+  const pid = parseInt(cmd.slice(2), 16);
+  const msg = parseMessages(await client.send(cmd)).find((m) => m[0] === 0x41 && m[1] === pid);
+  if (!msg || msg.length < 2 + defs[0]!.bytes) throw new Error(`${cmd}: unexpected reply`);
+  return defs.map((d) => [d.id, d.decode(msg.slice(2, 2 + d.bytes))]);
+}
 
 /** Reads one registry PID and returns its decoded value. */
 export async function readPid(client: Sender, id: string): Promise<number> {
   const def = PIDS[id];
   if (!def) throw new Error(`Unknown PID ${id}`);
-  const pid = parseInt(id.slice(2), 16);
-  const msg = parseMessages(await client.send(id)).find((m) => m[0] === 0x41 && m[1] === pid);
-  if (!msg || msg.length < 2 + def.bytes) throw new Error(`${id}: unexpected reply`);
-  return def.decode(msg.slice(2, 2 + def.bytes));
+  return (await readCmd(client, cmdOf(def))).find(([i]) => i === id)![1];
 }
 
 /** Mode 03 (stored), 07 (pending) or 0A (permanent) codes. NO DATA means none. */

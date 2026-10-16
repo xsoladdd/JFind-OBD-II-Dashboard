@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { useMounted } from "@/components/connect/hooks";
 import { toReport } from "@/lib/diagnostics/report";
 import type { Scan } from "@/lib/diagnostics/scan";
+import { PIDS } from "@/lib/obd/pids";
 
 // Printing shows only this report, whatever app shell surrounds the page.
 const PRINT_CSS = `@media print {
@@ -86,7 +87,7 @@ export function PrintReport({ scan }: { scan: Scan }) {
               {r.freezeFrame.values.map((v) => (
                 <tr key={v.id}>
                   <td className={TD}>{v.name}</td>
-                  <td className={`${TD} text-right font-mono`}>{v.value}</td>
+                  <td className={`${TD} text-right font-mono`}>{PIDS[v.id]?.text?.(v.value) ?? v.value}</td>
                   <td className={TD}>{v.unit}</td>
                 </tr>
               ))}

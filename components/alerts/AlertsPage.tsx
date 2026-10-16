@@ -8,7 +8,7 @@ import { PID_LIST } from "@/lib/obd/pids";
 import { MUTE_MINUTES, useAlerts } from "@/lib/store/alerts";
 import { useConnection } from "@/lib/store/connection";
 import { ATRV, liveDef, useLive } from "@/lib/store/live";
-import { useAlertRules, useRedline, useUnits } from "@/lib/store/settings";
+import { useAlertRules, useCustomPids, useRedline, useUnits } from "@/lib/store/settings";
 import { toDisplay, type UnitSystem } from "@/lib/units";
 import { useMounted } from "../connect/hooks";
 
@@ -136,7 +136,9 @@ export function AlertsPage() {
   const muted = useAlerts((s) => s.mutedUntil > 0);
   const { mute, unmute } = useAlerts.getState();
   const [draft, setDraft] = useState<Draft | null>(null);
-  const ids = supported.length ? supported : ALL_IDS;
+  const [customPids] = useCustomPids();
+  // Status / enum PIDs (liveDef(id).text) can't have thresholds.
+  const ids = (supported.length ? supported : [...ALL_IDS, ...customPids.filter((c) => c.enabled).map((c) => c.id)]).filter((id) => !liveDef(id)?.text);
 
   return (
     <main className="mx-auto w-full max-w-3xl space-y-4 px-4 py-4">

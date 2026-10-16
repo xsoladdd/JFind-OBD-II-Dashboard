@@ -25,12 +25,64 @@ describe("PID decoders", () => {
     ["0146", [0x39], 17],
     ["015C", [0x82], 90],
     ["015E", [0x00, 0x14], 1],
+    // Added in JOID-0010. Vectors worked from the J1979 formulas (Wikipedia "OBD-II PIDs" reproduction).
+    ["0103", [0x02, 0x00], 512],
+    ["0108", [0x90], 12.5],
+    ["0109", [0x70], -12.5],
+    ["0113", [0x33], 0x33],
+    ...[0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b].flatMap((pid): [string, number[], number][] => {
+      const id = `01${pid.toString(16).toUpperCase()}`;
+      return [[id, [0x5a, 0x80], 0.45], [`${id}T`, [0x5a, 0x88], 6.25]];
+    }),
+    ["011C", [0x06], 6],
+    ["011D", [0x05], 5],
+    ["0121", [0x01, 0x02], 258],
+    ["012C", [0x33], 20],
+    ["012D", [0x40], -50],
+    ["012E", [0xff], 100],
+    ["0130", [0x0c], 12],
+    ["0131", [0x07, 0x30], 1840],
+    ["0143", [0x01, 0x00], (256 * 100) / 255],
+    ["0144", [0x80, 0x00], 1],
+    ["0145", [0x66], 40],
+    ["0147", [0x33], 20],
+    ["0148", [0x66], 40],
+    ["0149", [0x99], 60],
+    ["014A", [0xcc], 80],
+    ["014B", [0xff], 100],
+    ["014C", [0x00], 0],
+    ["014D", [0x00, 0x3c], 60],
+    ["014E", [0x0a, 0x5a], 2650],
+    ["0151", [0x04], 4],
+    ["0152", [0x0d], (13 * 100) / 255],
+    ["0159", [0x01, 0xf4], 5000],
+    ["015A", [0x80], (128 * 100) / 255],
+    ["0161", [0x7d], 0],
+    ["0162", [0xff], 130],
+    ["0163", [0x01, 0x40], 320],
   ])("%s %j → %d", (id, bytes, value) => {
     expect(PIDS[id]!.decode(bytes)).toBeCloseTo(value, 5);
   });
 
   it("covers every PID in the spec", () => {
-    expect(Object.keys(PIDS)).toHaveLength(19);
+    expect(Object.keys(PIDS)).toHaveLength(65);
+  });
+
+  it("renders enum and bit-status PIDs as text", () => {
+    expect(PIDS["0103"]!.text!(0x0200)).toBe("1: Closed loop · 2: —");
+    expect(PIDS["0103"]!.text!(0x0110)).toBe("1: Open loop (engine cold) · 2: Closed loop (O2 sensor fault)");
+    expect(PIDS["0113"]!.text!(0x33)).toBe("B1S1 B1S2 B2S1 B2S2");
+    expect(PIDS["011D"]!.text!(0x05)).toBe("B1S1 B2S1");
+    expect(PIDS["0113"]!.text!(0)).toBe("None");
+    expect(PIDS["011C"]!.text!(6)).toBe("EOBD (Europe)");
+    expect(PIDS["011C"]!.text!(30)).toBe("Code 30");
+    expect(PIDS["0151"]!.text!(4)).toBe("Diesel");
+    expect(PIDS["0151"]!.text!(23)).toBe("Bifuel: diesel");
+  });
+
+  it("two-value PIDs share one command and one reply", () => {
+    expect(PIDS["0114T"]!.cmd).toBe("0114");
+    expect(PIDS["0114"]!.cmd).toBeUndefined();
   });
 });
 

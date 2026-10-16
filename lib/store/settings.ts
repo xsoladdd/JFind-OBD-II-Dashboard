@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { AlertRule } from "../alerts/rules";
 import { sanitizeProfiles, type AdapterProfile } from "../connect/profiles";
+import { sanitizeCustomPids, type CustomPid } from "../obd/custom";
 import { EMPTY_LAYOUTS, type CustomLayouts } from "../dashboard/layouts";
 import type { UnitSystem } from "../units";
 import { getSetting, useSetting } from "../storage/settings";
@@ -55,3 +56,17 @@ export const useAdapterProfiles = (): [AdapterProfile[], (v: AdapterProfile[]) =
   const [v, set] = useSetting<unknown>("ble.profiles", NO_PROFILES);
   return [useMemo(() => sanitizeProfiles(v), [v]), set];
 };
+
+// Custom PIDs (docs/custom-pids.md). Sanitized once per stored array so hook consumers get a stable reference.
+const NO_CUSTOM: CustomPid[] = [];
+const sane = new WeakMap<object, CustomPid[]>();
+const customPids = (v: unknown): CustomPid[] => {
+  if (!Array.isArray(v)) return NO_CUSTOM;
+  if (!sane.has(v)) sane.set(v, sanitizeCustomPids(v));
+  return sane.get(v)!;
+};
+export const useCustomPids = (): [CustomPid[], (v: CustomPid[]) => void] => {
+  const [v, set] = useSetting<CustomPid[]>("pids.custom", NO_CUSTOM);
+  return [customPids(v), set];
+};
+export const getCustomPids = () => customPids(getSetting<CustomPid[]>("pids.custom", NO_CUSTOM));

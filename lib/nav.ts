@@ -14,6 +14,7 @@ export const NAV: NavItem[] = [
   { href: "/ecu", label: "ECU" },
   { href: "/alerts", label: "Alerts" },
   { href: "/history", label: "History" },
+  { href: "/pids", label: "PIDs" },
 ];
 
 /** Phone tab bar partition: primary entries keep their order, everything else goes under "More". */

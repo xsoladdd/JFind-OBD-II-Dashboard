@@ -3,7 +3,9 @@ import { ReturnAfterClear } from "./codeHistory";
 import { hex2 } from "../obd/supported";
 import { batteryVolts, headerLines, mode06Reply, mode09Reply, type SimBattery } from "./advanced";
 import { engineAt, rng, type EngineState } from "./engine";
+import { customAnswer, SIM_DEFAULT_HEADER, simHeader } from "./customPids";
 import { garageAnswer } from "./garage";
+import { MORE_ENCODERS } from "./morePids";
 import { withLaunch } from "./trips";
 
 const clampByte = (n: number) => Math.max(0, Math.min(255, Math.round(n)));
@@ -36,6 +38,7 @@ const ENCODERS: Record<number, (e: EngineState) => number[]> = {
   0x46: (e) => temp(e.ambient),
   0x5c: (e) => temp(e.oil),
   0x5e: (e) => word(e.fuelRate * 20),
+  ...MORE_ENCODERS,
 };
 
 export const SIM_VIN = "SIMULATOR0VIN0001"; // deliberately not a real VIN
@@ -76,6 +79,7 @@ export class Elm327Emulator {
   private protocolSet = "0";
   private detected = false;
   private headers = false;
+  private header = SIM_DEFAULT_HEADER; // ATSH (lib/sim/customPids.ts)
   /** Set by the /ecu battery test in Demo mode; null keeps the plain 12.4 / 14.1 V behaviour. */
   battery: SimBattery | null = null;
   private stored = [...SIM_DTCS.stored];
@@ -117,6 +121,7 @@ export class Elm327Emulator {
     if (cmd === "ATZ" || cmd === "ATWS") {
       this.echo = this.linefeeds = this.spaces = true;
       this.headers = false;
+      this.header = SIM_DEFAULT_HEADER;
       this.protocolSet = "0";
       this.detected = false;
       return ["", "ELM327 v1.5"];
@@ -141,6 +146,7 @@ export class Elm327Emulator {
       this.detected = false;
     }
     else if (flag("ATH")) this.headers = cmd.endsWith("1");
+    else if (simHeader(cmd)) this.header = simHeader(cmd)!;
     else if (!(/^ATAT[012]$/.test(cmd) || /^ATST[0-9A-F]{2}$/.test(cmd) || cmd === "ATD" || flag("ATM")))
       return ["?"];
     return ["OK"];
@@ -160,14 +166,17 @@ export class Elm327Emulator {
     return [...prefix, ...(reply ? this.frame(reply) : ["NO DATA"])];
   }
 
-  private answer([mode, pid, frameNo]: number[]): number[] | null {
+  private answer(bytes: number[]): number[] | null {
+    const [mode, pid, frameNo] = bytes;
+    const e = withLaunch({ ...engineAt(this.clock(), this.rand), ...(this.engineRunning ? {} : ENGINE_OFF) });
+    const custom = customAnswer(this.header, bytes, e);
+    if (custom !== undefined) return custom;
     const extra = garageAnswer(mode!, pid);
     if (extra) return extra;
-    const e = withLaunch({ ...engineAt(this.clock(), this.rand), ...(this.engineRunning ? {} : ENGINE_OFF) });
     switch (mode) {
       case 0x01:
         if (pid === undefined) return null;
-        if (pid % 0x20 === 0) return pid <= 0x40 ? [0x41, pid, ...bitmask(pid, this.supportedPids)] : null;
+        if (pid % 0x20 === 0) return pid <= 0x60 ? [0x41, pid, ...bitmask(pid, this.supportedPids)] : null;
         if (pid === 0x01)
           return [0x41, 0x01, (this.stored.length ? 0x80 : 0) | this.stored.length, MON_B, MON_C, this.monitorsReset ? MON_C : 0x00];
         if (pid === 0x41) return [0x41, 0x41, 0x00, MON_B, MON_C, this.monitorsReset ? MON_C : 0x04]; // EVAP still running this drive cycle

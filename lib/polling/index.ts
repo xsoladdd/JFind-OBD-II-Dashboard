@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import type { ElmClient } from "../elm/ElmClient";
 import { getClient, useConnection } from "../store/connection";
 import { ATRV, useLive } from "../store/live";
+import { getCustomPids } from "../store/settings";
+import { subscribeSettings } from "../storage/settings";
 import { toast } from "../store/toasts";
 import { addRefs, Scheduler } from "./Scheduler";
 
@@ -13,6 +15,8 @@ let consumers = 0;
 let current: { client: ElmClient; scheduler: Scheduler; hzTimer: ReturnType<typeof setInterval> } | null = null;
 let lastClient: ElmClient | null = null;
 let unsubConnection: (() => void) | null = null;
+let unsubCustom: (() => void) | null = null;
+let lastCustom = getCustomPids();
 const fast = new Map<string, number>();
 
 function sync() {
@@ -27,6 +31,8 @@ function startOn(client: ElmClient) {
   lastClient = client;
   const scheduler = new Scheduler(client, {
     fast,
+    custom: (lastCustom = getCustomPids()),
+    protocol: useConnection.getState().protocol,
     onSupported: (ids) => useLive.setState({ supported: ids }),
     onValue: (id, v, t) => {
       useLive.getState().record(id, v, t);
@@ -54,6 +60,12 @@ function stopCurrent() {
 export function acquirePolling() {
   consumers++;
   unsubConnection ??= useConnection.subscribe(sync);
+  // Edited custom PIDs apply to the running Scheduler without a restart.
+  unsubCustom ??= subscribeSettings(() => {
+    if (getCustomPids() === lastCustom) return;
+    lastCustom = getCustomPids();
+    current?.scheduler.setCustom(lastCustom);
+  });
   sync();
   let released = false;
   return () => {

@@ -20,7 +20,7 @@ export function NavLinks({ variant }: { variant: "tabs" | "side" }) {
         const active = isActive(path, n.href);
         const Badge = BADGES[n.href];
         return (
-          <li key={n.href} className={variant === "tabs" ? "min-w-0 flex-1" : undefined}>
+          <li key={n.href} className={variant === "tabs" ? "relative min-w-0 flex-1" : undefined}>
             <Link
               href={n.href}
               aria-current={active ? "page" : undefined}
@@ -31,8 +31,14 @@ export function NavLinks({ variant }: { variant: "tabs" | "side" }) {
               }
             >
               {n.label}
-              {Badge && <Badge />}
+              {variant === "side" && Badge && <Badge />}
             </Link>
+            {/* Beside the label would be cut off by the tab's truncate, so it sits in the tab's corner. */}
+            {variant === "tabs" && Badge && (
+              <span className="pointer-events-none absolute right-0 top-0">
+                <Badge />
+              </span>
+            )}
           </li>
         );
       })}

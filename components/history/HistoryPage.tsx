@@ -64,10 +64,11 @@ export function HistoryPage() {
     }
   }
 
-  async function save(name: string) {
+  async function save(path: string) {
     try {
-      download(name, (await readText(`logs/${name}`)) ?? "");
+      download(path.split("/")[1]!, (await readText(path)) ?? "");
     } catch (e) {
+      const name = path.split("/")[1];
       setError(`Couldn't read ${name}: ${errMsg(e)}`);
     }
   }
@@ -78,7 +79,7 @@ export function HistoryPage() {
     <main className="mx-auto w-full max-w-4xl space-y-4 px-4 py-6">
       <header>
         <h1 className="text-2xl font-bold">History</h1>
-        <p className="text-sm text-zinc-400">Diagnostic scans and debug logs saved in your folder, newest first.</p>
+        <p className="text-sm text-zinc-400">Diagnostic scans and debug logs you can download or delete, newest first.</p>
       </header>
 
       <FolderCard />
@@ -108,6 +109,9 @@ export function HistoryPage() {
                     <span className="block text-xs text-amber-300">Not a readable scan file</span>
                   </span>
                 )}
+                <button className={btn} onClick={() => void save(`scans/${s.name}`)}>
+                  Download
+                </button>
                 <button className="text-red-300 underline" onClick={() => void remove(`scans/${s.name}`, `scan ${s.name}`)}>
                   Delete
                 </button>
@@ -140,7 +144,7 @@ export function HistoryPage() {
                   <button className={btn} aria-expanded={viewing?.name === `logs/${l.name}`} onClick={() => void view(l.name)}>
                     {viewing?.name === `logs/${l.name}` ? "Hide" : "View"}
                   </button>
-                  <button className={btn} onClick={() => void save(l.name)}>
+                  <button className={btn} onClick={() => void save(`logs/${l.name}`)}>
                     Download
                   </button>
                   <button className="text-red-300 underline" onClick={() => void remove(`logs/${l.name}`, `log ${l.name}`)}>

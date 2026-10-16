@@ -54,6 +54,8 @@ describe("checkPath", () => {
       "scans/2026-10-16T12-00-00Z_NOVIN.json",
       "logs/2026-10-16T12-00-00Z_demo.log",
       "trips/2026-10-16T12-00-00Z_NOVIN.csv",
+      "garage/garage.json",
+      "garage/garage-broken-2026-10-16T12-00-00Z.json",
     ])
       expect(folder.checkPath(ok), ok).toEqual(ok.split("/"));
   });
@@ -111,6 +113,79 @@ describe("folder files", () => {
     await folder.useFolder.getState().unlink();
     expect(folder.useFolder.getState()).toMatchObject({ status: "unlinked", folderName: null });
     expect(root.file("logs/x.log")?.data).toBe("x"); // forgetting the folder deletes nothing
+  });
+});
+
+/** Stands in for a browser with OPFS: navigator.storage.getDirectory() + FileSystemFileHandle.createWritable. */
+function stubOpfs(root: FakeDir, persist?: () => Promise<boolean>) {
+  vi.stubGlobal("navigator", { storage: { getDirectory: async () => root, persist } });
+  vi.stubGlobal("FileSystemFileHandle", class { createWritable() {} });
+}
+
+describe("browser fallback (OPFS)", () => {
+  it("without a picker, uses the private file system as a ready folder, and asks to persist it", async () => {
+    const root = new FakeDir("");
+    const persist = vi.fn(async () => true);
+    stubOpfs(root, persist);
+    const { folder } = await boot();
+    expect(folder.useFolder.getState()).toMatchObject({ status: "ready", folderName: "this browser", location: "browser" });
+    expect(persist).toHaveBeenCalled();
+
+    await folder.writeText("scans/a.json", "{}");
+    await folder.writeText("scans/a.json", '{"x":1}');
+    await folder.appendText("logs/x.log", "one\n");
+    await folder.appendText("logs/x.log", "two\n");
+    expect(await folder.readText("scans/a.json")).toBe('{"x":1}');
+    expect(await folder.readText("logs/none.log")).toBeNull();
+    expect((await folder.listFiles("logs")).map((f) => f.name)).toEqual(["x.log"]);
+    expect(root.file("logs/x.log")?.data).toBe("one\ntwo\n");
+    await folder.removeFile("scans/a.json");
+    expect(await folder.listFiles("scans")).toEqual([]);
+
+    await folder.useFolder.getState().link(); // no picker: nothing happens
+    await folder.useFolder.getState().unlink(); // nothing to forget
+    expect(folder.useFolder.getState()).toMatchObject({ status: "ready", location: "browser" });
+  });
+
+  it("saves settings to settings.json in the browser's storage", async () => {
+    const root = new FakeDir("");
+    stubOpfs(root);
+    const { settings } = await boot();
+    await tick();
+    settings.setSetting("units", "imperial");
+    await tick(600);
+    expect(JSON.parse(root.file("settings.json")!.data)).toEqual({ units: "imperial" });
+  });
+
+  it("stays unsupported when neither exists, or OPFS has no createWritable, or getDirectory fails", async () => {
+    const a = await boot();
+    expect(a.folder.useFolder.getState()).toMatchObject({ status: "unsupported", location: null });
+
+    vi.stubGlobal("navigator", { storage: { getDirectory: async () => new FakeDir("") } });
+    expect((await boot()).folder.useFolder.getState().status).toBe("unsupported"); // no FileSystemFileHandle.createWritable
+
+    stubOpfs(new FakeDir(""));
+    vi.stubGlobal("navigator", {
+      storage: {
+        getDirectory: async () => {
+          throw new Error("SecurityError");
+        },
+      },
+    });
+    expect((await boot()).folder.useFolder.getState().status).toBe("unsupported");
+  });
+
+  it("leaves the picker flow alone where showDirectoryPicker exists, even if OPFS does too", async () => {
+    const opfs = new FakeDir("");
+    stubOpfs(opfs);
+    const root = new FakeDir("OBD Dash");
+    const { folder } = await boot(root);
+    expect(folder.useFolder.getState()).toMatchObject({ status: "unlinked", location: null });
+    await folder.useFolder.getState().link();
+    expect(folder.useFolder.getState()).toMatchObject({ status: "ready", folderName: "OBD Dash", location: "folder" });
+    await folder.writeText("scans/a.json", "{}");
+    expect(root.file("scans/a.json")?.data).toBe("{}");
+    expect(opfs.entries.size).toBe(0);
   });
 });
 
@@ -255,9 +330,11 @@ describe("debug logs", () => {
     });
     conn.useConnection.setState({ status: "idle" });
     await tick(100);
-    const files = logFiles(root).sort((a, b) => a.name.localeCompare(b.name));
-    expect(files.map((f) => f.data.split("\n").length - 1)).toEqual([2, 1]);
-    expect(files[1]!.name).toBe("2026-10-16T12-03-00Z_demo.log"); // named after its first line
+    const files = logFiles(root);
+    const lines = (f: FakeFile) => f.data.split("\n").length - 1;
+    // The first file is named from the real clock, the second from its first line's (fixed) time, so don't rely on name order.
+    expect(files.map(lines).sort()).toEqual([1, 2]);
+    expect(files.find((f) => lines(f) === 1)!.name).toBe("2026-10-16T12-03-00Z_demo.log"); // named after its first line
     expect(files.every((f) => enc.encode(f.data).length <= logs.LOG_CAP)).toBe(true);
     stop();
   });

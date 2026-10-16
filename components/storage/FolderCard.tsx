@@ -1,13 +1,16 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { btn, btnPrimary, card } from "@/components/garage/ui";
 import { useFolder } from "@/lib/storage/folder";
 import { useSettingsWarning } from "@/lib/storage/settings";
 
-/** Where settings, scans and debug logs are saved, and the buttons to link the folder or allow access again. */
+/** Where settings, scans, cars and debug logs are saved, and the buttons to link the folder or allow access again. */
 export function FolderCard() {
-  const { status, folderName, link, regrant, unlink } = useFolder();
+  const { status, folderName, location, link, regrant, unlink } = useFolder();
+  const onHistory = usePathname() === "/history";
   const warning = useSettingsWarning((s) => s.warning);
   const [error, setError] = useState("");
   const run = (fn: () => Promise<void>) => () => {
@@ -32,7 +35,7 @@ export function FolderCard() {
       {status === "unlinked" && (
         <>
           <p className="text-zinc-300">
-            OBD Dash saves settings, scans and debug logs as plain files in a folder you choose. Pick an empty folder,
+            OBD Dash saves settings, scans, cars and debug logs as plain files in a folder you choose. Pick an empty folder,
             or make a new one such as &ldquo;OBD Dash&rdquo;.
           </p>
           <button className={btnPrimary} onClick={run(link)}>
@@ -53,7 +56,33 @@ export function FolderCard() {
           </div>
         </>
       )}
-      {status === "ready" && (
+      {status === "ready" && location === "browser" && (
+        <div className="space-y-2">
+          <p className="text-zinc-300">
+            <span className="mr-2 inline-block h-2 w-2 rounded-full bg-emerald-400" aria-hidden />
+            <strong className="font-semibold text-zinc-100">Saved in this browser</strong>
+          </p>
+          <ul className="list-disc space-y-1 pl-5 text-zinc-400">
+            <li>This browser can&apos;t open a folder, so settings, scans, cars and logs are kept in its private storage.</li>
+            <li>The files aren&apos;t visible in the Files app.</li>
+            <li>Clearing this site&apos;s data deletes them.</li>
+            <li>
+              {onHistory ? (
+                "To keep a copy, download files below."
+              ) : (
+                <>
+                  To keep a copy, download files from{" "}
+                  <Link href="/history" className="text-sky-300 underline">
+                    History
+                  </Link>
+                  .
+                </>
+              )}
+            </li>
+          </ul>
+        </div>
+      )}
+      {status === "ready" && location !== "browser" && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <p className="mr-auto text-zinc-300">
             <span className="mr-2 inline-block h-2 w-2 rounded-full bg-emerald-400" aria-hidden />

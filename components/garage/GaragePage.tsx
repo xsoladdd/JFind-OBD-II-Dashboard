@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { currentOdometer, type CarProfile } from "@/lib/garage/model";
+import { FolderCard } from "@/components/storage/FolderCard";
+import { useFolder } from "@/lib/storage/folder";
 import { useGarage } from "@/lib/store/garage";
 import { useConnection } from "@/lib/store/connection";
 import { Backup } from "./Backup";
@@ -75,7 +77,8 @@ function CarCard({ car, onEdit }: { car: CarProfile; onEdit: () => void }) {
 }
 
 export function GaragePage() {
-  const { profiles, activeId, activeProfile, detectedVin, loaded, error, setActive, dismissDetectedVin } = useGarage();
+  const { profiles, activeId, activeProfile, detectedVin, loaded, readOnly, error, load, setActive, dismissDetectedVin } = useGarage();
+  const folderStatus = useFolder((s) => s.status);
   const [form, setForm] = useState<{ initial?: Partial<CarProfile> } | null>(null);
   const mode = useConnection((s) => s.mode);
 
@@ -84,14 +87,31 @@ export function GaragePage() {
       <header className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Garage</h1>
-          <p className="text-sm text-zinc-400">Your cars, service history and reminders. Stored only in this browser.</p>
+          <p className="text-sm text-zinc-400">Your cars, service history and reminders, saved as one file in your storage folder.</p>
         </div>
         <Link href="/" className="text-sm text-sky-300 underline">
           Connect
         </Link>
       </header>
 
-      {error && <p className="rounded-md border border-red-800 bg-red-950 p-3 text-sm text-red-200">{error}</p>}
+      {folderStatus !== "ready" && (
+        <section className="space-y-2">
+          <p className="text-sm font-semibold text-amber-300">Choose a folder to save your cars</p>
+          <p className="text-sm text-zinc-400">Until then they only live in this tab and are lost when it closes.</p>
+          <FolderCard />
+        </section>
+      )}
+
+      {error && (
+        <div role="alert" className="rounded-md border border-red-800 bg-red-950 p-3 text-sm text-red-200">
+          <p>{error}</p>
+          {readOnly && (
+            <button className={`${btn} mt-2`} onClick={() => void load()}>
+              Try again
+            </button>
+          )}
+        </div>
+      )}
 
       {detectedVin && !form && (
         <section className="rounded-lg border border-sky-700 bg-sky-950/40 p-4" role="status">

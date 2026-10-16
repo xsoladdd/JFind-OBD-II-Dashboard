@@ -99,7 +99,7 @@ function ScanFromUrl() {
 /** Where the latest scan went. Without a folder the downloads below are the only record. */
 function SaveNote() {
   const { savedAs, saveError } = useDiagnostics();
-  const { status, folderName } = useFolder();
+  const { status, folderName, location } = useFolder();
   if (saveError) return <p className="text-sm text-red-300">{saveError}</p>;
   if (status !== "ready")
     return (
@@ -113,7 +113,7 @@ function SaveNote() {
   if (!savedAs) return null;
   return (
     <p className="break-all text-sm text-emerald-300">
-      Saved to {folderName}/{SCAN_DIR}/{savedAs}
+      {location === "browser" ? `Saved in this browser: ${SCAN_DIR}/${savedAs}` : `Saved to ${folderName}/${SCAN_DIR}/${savedAs}`}
     </p>
   );
 }

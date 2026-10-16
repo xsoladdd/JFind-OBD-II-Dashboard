@@ -1,5 +1,6 @@
 // All app data lives as plain files in a folder the user picked (File System Access API). See docs/storage.md.
 // The only thing kept in the browser is the folder handle (IndexedDB), so the user picks the folder once.
+// Where there is no folder picker but the browser's private file system (OPFS) works, that is the folder instead.
 import { create } from "zustand";
 
 // Chromium-only parts of the API that TypeScript's DOM lib doesn't declare.
@@ -16,10 +17,13 @@ declare global {
 }
 
 export type FolderStatus = "unsupported" | "unlinked" | "needs-permission" | "ready";
+/** "folder": a real folder the user picked. "browser": this browser's private storage (OPFS), no picker available. */
+export type FolderLocation = "folder" | "browser";
 
 interface FolderState {
   status: FolderStatus;
   folderName: string | null;
+  location: FolderLocation | null;
   link: () => Promise<void>;
   regrant: () => Promise<void>;
   unlink: () => Promise<void>;
@@ -35,6 +39,12 @@ export class FolderUnavailableError extends Error {
 let root: FileSystemDirectoryHandle | null = null;
 
 const supported = () => typeof globalThis.showDirectoryPicker === "function";
+// OPFS also needs createWritable (older WebKit only has sync access handles in workers), or every write would fail.
+const hasOpfs = () =>
+  typeof navigator !== "undefined" &&
+  typeof navigator.storage?.getDirectory === "function" &&
+  typeof FileSystemFileHandle !== "undefined" &&
+  "createWritable" in FileSystemFileHandle.prototype;
 
 /** Remembers the one folder handle; IndexedDB is the only browser store that can hold it. Nothing else goes here. */
 function idb<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
@@ -59,12 +69,13 @@ async function adopt(h: FileSystemDirectoryHandle, ask: boolean) {
   // requestPermission throws without a user gesture; that just leaves us at "needs-permission".
   if (p !== "granted" && ask) p = await h.requestPermission(mode).catch((): Perm => "prompt");
   root = h;
-  useFolder.setState({ folderName: h.name, status: p === "granted" ? "ready" : "needs-permission" });
+  useFolder.setState({ folderName: h.name, location: "folder", status: p === "granted" ? "ready" : "needs-permission" });
 }
 
 export const useFolder = create<FolderState>((set) => ({
   status: "unlinked",
   folderName: null,
+  location: null,
 
   async link() {
     if (!supported()) return;
@@ -84,15 +95,25 @@ export const useFolder = create<FolderState>((set) => ({
   },
 
   async unlink() {
+    if (useFolder.getState().location === "browser") return; // nothing to forget: the browser's storage is the folder
     root = null;
-    set({ status: supported() ? "unlinked" : "unsupported", folderName: null });
+    set({ status: supported() ? "unlinked" : "unsupported", folderName: null, location: null });
     await idb("readwrite", (s) => s.delete("root")).catch(() => {});
   },
 }));
 
 /** Runs once in the browser: feature-detects, then restores the remembered folder (without prompting). */
 export async function initFolder() {
-  if (!supported()) return useFolder.setState({ status: "unsupported" });
+  if (!supported()) {
+    if (!hasOpfs()) return useFolder.setState({ status: "unsupported" });
+    try {
+      root = await navigator.storage.getDirectory();
+    } catch {
+      return useFolder.setState({ status: "unsupported" }); // e.g. Safari private browsing
+    }
+    void Promise.resolve(navigator.storage.persist?.()).catch(() => {}); // best effort: lowers the eviction risk
+    return useFolder.setState({ status: "ready", folderName: "this browser", location: "browser" });
+  }
   const h = await idb<FileSystemDirectoryHandle | undefined>("readonly", (s) => s.get("root")).catch(() => undefined);
   if (h) await adopt(h, false);
 }
@@ -100,7 +121,7 @@ export async function initFolder() {
 const SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const ROOT_FILE = /^settings\.json$|^settings-broken-[A-Za-z0-9-]+\.json$/;
 // The only top-level folders the app may write in; a feature that saves files adds its folder here.
-const DIRS = ["scans", "logs", "trips"];
+const DIRS = ["scans", "logs", "trips", "garage"];
 
 /** The only paths the app may touch in the user's folder: settings.json, its broken-file backups and DIRS/<file>. */
 export function checkPath(path: string): string[] {

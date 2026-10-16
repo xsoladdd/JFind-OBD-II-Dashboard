@@ -73,7 +73,7 @@ Live dashboard, polling Scheduler and live-data API: see [docs/dashboard.md](doc
 Advanced diagnostics (`/ecu`: Mode 06, codes per module, Mode 09, battery test): see [docs/ecu.md](docs/ecu.md).
 Custom dashboard builder and alerts (`/alerts`): see [docs/custom-dashboard-and-alerts.md](docs/custom-dashboard-and-alerts.md).
 
-Folder storage (`settings.json`, scan history, debug logs, `/history`): see [docs/storage.md](docs/storage.md).
+Folder storage (`settings.json`, scan history, Garage file, debug logs, `/history`; falls back to the browser's private storage where there is no folder picker): see [docs/storage.md](docs/storage.md).
 
 Trips (`/trips`: trip computer, performance timer, trip log and replay, GPS route): see [docs/trips.md](docs/trips.md).
 
@@ -111,9 +111,11 @@ Things I couldn't confirm without the hardware or an authoritative source:
 - [ ] **RPM with the engine off**: clearing needs `010C` to read exactly 0. If an ECU answers NO DATA with the engine off, clearing stays blocked. Confirm on real cars.
 - [ ] **Alert examples**: every number in the example rules is a placeholder to adjust per car: coolant above 110 °C (hysteresis 3 °C, 5 s), adapter voltage below 12.0 V (0.3 V, 10 s), RPM above the redline setting (300 rpm, 0 s).
 - [ ] **Alert sound and vibration on phones**: check that the beep plays after the Connect tap on Android Chrome and on iOS (Bluefy), and that it vibrates on Android. iOS has no Vibration API.
-- [ ] **Folder picker on Android Chrome**: whether `showDirectoryPicker` exists there. The app feature-detects it, and without it it shows the "can't be saved" banner.
+- [ ] **Folder picker on Android Chrome**: whether `showDirectoryPicker` exists there. The app feature-detects it. Without it, it uses the browser's private storage (OPFS) if that works, and only shows the "can't be saved" banner when neither does.
 - [ ] **Folder re-permission on the Connect tap**: Connect starts the Bluetooth chooser first, then asks for folder access with the same tap. Check on a real device that the two prompts don't interfere. If the folder prompt fails, the **Allow access** button still works.
-- [ ] **Bluefy (iOS)**: assumed to have no folder picker, so settings last only for the session there. Older `localStorage` overrides are still read.
+- [ ] **Bluefy (iOS)**: assumed to have no folder picker, so it should use the browser's private storage (OPFS). Check that it does, and that `FileSystemFileHandle.createWritable` exists there (the app needs it; without it nothing is saved). Older `localStorage` overrides are still read.
+- [ ] **OPFS eviction on iOS / Android**: files in the browser's private storage can be deleted when the browser is short on space or the user clears site data, even after `navigator.storage.persist()`. Check how long scans, logs and the Garage survive on the user's phone, and download backups from History / Garage in the meantime.
+- [ ] **Garage migration from IndexedDB**: the one-time move to `garage/garage.json` was tested with a simulated old database in Chromium only. Check it on the user's real phone data.
 - [ ] **Trip fuel estimate constants** (`lib/trips/fuel.ts`): petrol stoichiometric AFR 14.7:1 and density 745 g/L are approximations. Diesel without 015E shows "not available".
 - [ ] **Performance timer accuracy**: limited by how often the JF327 updates 010D (Demo mode gets about 6 speed readings/s alongside the other fast PIDs). OBD speed is whole km/h, and the start is the last 0 km/h reading.
 - [ ] **GPS accuracy and battery use** during trips on a real phone. Only tested with emulated positions.

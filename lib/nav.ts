@@ -3,6 +3,7 @@ export const NAV: { href: string; label: string }[] = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/diagnostics", label: "Diagnostics" },
   { href: "/garage", label: "Garage" },
+  { href: "/trips", label: "Trips" },
   { href: "/ecu", label: "ECU" },
   { href: "/alerts", label: "Alerts" },
   { href: "/history", label: "History" },

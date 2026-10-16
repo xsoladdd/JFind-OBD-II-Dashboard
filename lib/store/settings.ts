@@ -28,3 +28,14 @@ export const useAlertRules = (): [AlertRule[], (v: AlertRule[]) => void] => {
   return [rules(v), set];
 };
 export const getAlertRules = () => rules(getSetting<AlertRule[]>("alerts.rules", NO_RULES));
+
+// Trips (docs/trips.md). The stop timeout is an app default, not a standard.
+export const DEFAULT_TRIP_STOP_MIN = 5;
+export const useTripAutoRecord = () => useSetting<boolean>("trips.autoRecord", true);
+export const getTripAutoRecord = () => getSetting<boolean>("trips.autoRecord", true);
+export const useTripStopMin = () => useSetting<number>("trips.stopTimeoutMin", DEFAULT_TRIP_STOP_MIN);
+export const getTripStopMin = () => getSetting<number>("trips.stopTimeoutMin", DEFAULT_TRIP_STOP_MIN);
+/** Location is sensitive: off unless the user turns it on. */
+export const useTripGps = () => useSetting<boolean>("trips.gps", false);
+export const getTripGps = () => getSetting<boolean>("trips.gps", false);
+export const usePerfNoticeSeen = () => useSetting<boolean>("trips.perfNoticeSeen", false);

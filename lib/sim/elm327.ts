@@ -3,6 +3,7 @@ import { hex2 } from "../obd/supported";
 import { batteryVolts, headerLines, mode06Reply, mode09Reply, type SimBattery } from "./advanced";
 import { engineAt, rng, type EngineState } from "./engine";
 import { garageAnswer } from "./garage";
+import { withLaunch } from "./trips";
 
 const clampByte = (n: number) => Math.max(0, Math.min(255, Math.round(n)));
 const word = (n: number) => {
@@ -160,7 +161,7 @@ export class Elm327Emulator {
   private answer([mode, pid, frameNo]: number[]): number[] | null {
     const extra = garageAnswer(mode!, pid);
     if (extra) return extra;
-    const e = { ...engineAt(this.clock(), this.rand), ...(this.engineRunning ? {} : ENGINE_OFF) };
+    const e = withLaunch({ ...engineAt(this.clock(), this.rand), ...(this.engineRunning ? {} : ENGINE_OFF) });
     switch (mode) {
       case 0x01:
         if (pid === undefined) return null;

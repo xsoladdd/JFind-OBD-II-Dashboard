@@ -5,6 +5,8 @@ import { clearDtcs, readDtcs, readPid, readVin } from "../obd/requests";
 import { discoverSupported } from "../obd/supported";
 import { SimulatorTransport } from "../transport/SimulatorTransport";
 import { SIM_DTCS, SIM_VIN } from "./elm327";
+import { launchSpeed, simLaunch } from "./trips";
+import { analyzeRun } from "../trips/perf";
 
 function connectSim(chunkSize: number | [number, number] = 3) {
   let t = 30;
@@ -66,5 +68,19 @@ describe("simulator round trip", () => {
     await done;
     expect(statuses).toEqual(["reconnecting", "connected"]);
     expect(await readPid(client, "010D")).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe("trips demo launch", () => {
+  it("holds, passes 100 km/h and the quarter mile, then brakes to 0 and ends", () => {
+    simLaunch(0);
+    const s: { t: number; v: number }[] = [];
+    for (let t = 2900; t <= 30_000; t += 100) s.push({ t, v: Math.round(launchSpeed(t)!) });
+    const run = s.slice(s.findIndex((p, i) => p.v === 0 && s[i + 1]!.v > 0), s.findLastIndex((p, i) => p.v > 0 && s[i + 1]?.v === 0) + 2);
+    const r = analyzeRun(run);
+    expect(r.to100).toBeGreaterThan(5);
+    expect(r.quarter).toBeDefined();
+    expect(r.brake).toBeDefined();
+    expect(launchSpeed(60_000)).toBeNull();
   });
 });

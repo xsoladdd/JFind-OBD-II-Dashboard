@@ -5,6 +5,7 @@ import { AlertIndicator } from "@/components/alerts/AlertIndicator";
 import { initFolder } from "@/lib/storage/folder";
 import { startLogRecorder } from "@/lib/storage/logs";
 import { watchConnection } from "@/lib/store/toasts";
+import { startTripWatcher } from "@/lib/store/trips";
 import { ConnectionChip } from "./ConnectionChip";
 import { NavLinks } from "./NavLinks";
 import { Toaster } from "./Toaster";
@@ -21,6 +22,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       stopToasts();
     };
   }, []);
+  useEffect(startTripWatcher, []); // trips auto-record on any page
 
   // usePathname may suspend under cacheComponents on dynamic routes other workers add; keep the shell prerendered.
   const tabs = (variant: "tabs" | "side") => (

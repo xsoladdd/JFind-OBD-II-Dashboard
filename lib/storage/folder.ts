@@ -121,7 +121,7 @@ export async function initFolder() {
 const SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const ROOT_FILE = /^settings\.json$|^settings-broken-[A-Za-z0-9-]+\.json$/;
 // The only top-level folders the app may write in; a feature that saves files adds its folder here.
-const DIRS = ["scans", "logs", "trips", "garage"];
+const DIRS = ["scans", "logs", "trips", "garage", "dyno"];
 
 /** The only paths the app may touch in the user's folder: settings.json, its broken-file backups and DIRS/<file>. */
 export function checkPath(path: string): string[] {

@@ -56,6 +56,12 @@ function CarCard({ car, onEdit }: { car: CarProfile; onEdit: () => void }) {
           {car.fuelType}
           {car.fuelPrice !== null && ` · ${car.fuelPrice} ${car.currency || "(no currency)"}/L`}
         </dd>
+        {car.weightKg != null && (
+          <>
+            <dt className="text-zinc-400">Curb weight</dt>
+            <dd>{car.weightKg} kg</dd>
+          </>
+        )}
         <dt className="text-zinc-400">VIN</dt>
         <dd className="font-mono text-xs">{car.vin ?? "—"}</dd>
         <dt className="text-zinc-400">Odometer</dt>

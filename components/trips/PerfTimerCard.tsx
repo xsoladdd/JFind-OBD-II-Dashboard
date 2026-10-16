@@ -9,6 +9,7 @@ import { bestRun, usePerf } from "@/lib/store/perf";
 import { usePerfNoticeSeen, useUnits } from "@/lib/store/settings";
 import { simLaunch } from "@/lib/sim/trips";
 import type { PerfResult, PerfRun } from "@/lib/trips/perf";
+import { SafetyNotice } from "./SafetyNotice";
 import { btn, btnPrimary, card, disp } from "./ui";
 
 const metres = (m: number, units: string) => (units === "imperial" ? `${(m / 0.3048).toFixed(0)} ft` : `${m.toFixed(1)} m`);
@@ -56,22 +57,14 @@ export function PerfTimerCard() {
       </div>
 
       {notice ? (
-        <div role="alertdialog" aria-label="Safety notice" className="rounded-md border border-amber-600/50 bg-amber-500/10 p-3 text-sm">
-          <p className="mb-2">
-            Only use the timer where it&apos;s legal and safe, such as a closed course. Never on public roads. Keep your eyes on
-            the road: it runs hands-free.
-          </p>
-          <button
-            className={btnPrimary}
-            onClick={() => {
-              setSeen(true);
-              setNotice(false);
-              arm();
-            }}
-          >
-            I understand, arm
-          </button>
-        </div>
+        <SafetyNotice
+          what="the timer"
+          onAccept={() => {
+            setSeen(true);
+            setNotice(false);
+            arm();
+          }}
+        />
       ) : (
         <div className="flex flex-wrap items-center gap-2">
           {phase === "idle" ? (

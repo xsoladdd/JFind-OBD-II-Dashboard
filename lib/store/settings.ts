@@ -5,6 +5,7 @@ import { sanitizeCustomPids, type CustomPid } from "../obd/custom";
 import { EMPTY_LAYOUTS, type CustomLayouts } from "../dashboard/layouts";
 import type { UnitSystem } from "../units";
 import { getSetting, useSetting } from "../storage/settings";
+import { EXAMPLE_CDA_M2, EXAMPLE_CRR } from "../trips/dyno";
 
 export type ThemeId = "classic" | "sport" | "minimal" | "engineer" | "hud" | "custom";
 
@@ -70,3 +71,28 @@ export const useCustomPids = (): [CustomPid[], (v: CustomPid[]) => void] => {
   return [customPids(v), set];
 };
 export const getCustomPids = () => customPids(getSetting<CustomPid[]>("pids.custom", NO_CUSTOM));
+
+// Dyno (docs/dyno.md). Crr and CdA start at the typical example values in lib/trips/dyno.ts [verify]; extra load at 0.
+export interface DynoSettings {
+  extraKg: number;
+  losses: boolean;
+  crr: number;
+  cdaM2: number;
+  tyre: string;
+}
+export const DEFAULT_DYNO: DynoSettings = { extraKg: 0, losses: true, crr: EXAMPLE_CRR, cdaM2: EXAMPLE_CDA_M2, tyre: "" };
+const nonNeg = (v: unknown, d: number) => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : d);
+const dyno = (v: DynoSettings): DynoSettings => {
+  const ok = v && typeof v === "object";
+  return {
+    extraKg: nonNeg(ok && v.extraKg, DEFAULT_DYNO.extraKg),
+    losses: ok ? v.losses !== false : DEFAULT_DYNO.losses,
+    crr: nonNeg(ok && v.crr, DEFAULT_DYNO.crr),
+    cdaM2: nonNeg(ok && v.cdaM2, DEFAULT_DYNO.cdaM2),
+    tyre: ok && typeof v.tyre === "string" ? v.tyre : DEFAULT_DYNO.tyre,
+  };
+};
+export const useDynoSettings = (): [DynoSettings, (v: DynoSettings) => void] => {
+  const [v, set] = useSetting<DynoSettings>("dyno.inputs", DEFAULT_DYNO);
+  return [dyno(v), set];
+};

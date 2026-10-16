@@ -12,6 +12,7 @@ export function ProfileForm({ initial, onDone }: { initial?: Partial<CarProfile>
   const [year, setYear] = useState(str(p.year));
   const [price, setPrice] = useState(str(p.fuelPrice));
   const [odo, setOdo] = useState(str(p.odometer));
+  const [weight, setWeight] = useState(str(p.weightKg ?? null));
   const up = (v: Partial<CarProfile>) => setP((x) => ({ ...x, ...v }));
   const y = num(year);
   const valid = p.name.trim() !== "" && (year === "" || (y !== null && Number.isInteger(y) && y >= 1886 && y <= 2200));
@@ -26,6 +27,7 @@ export function ProfileForm({ initial, onDone }: { initial?: Partial<CarProfile>
       fuelPrice: num(price),
       currency: p.currency.trim().toUpperCase(),
       odometer,
+      weightKg: num(weight),
       odometerAt: odometer !== p.odometer || !p.odometerAt ? (odometer === null ? null : new Date().toISOString()) : p.odometerAt,
     });
     setActive(p.id);
@@ -69,6 +71,9 @@ export function ProfileForm({ initial, onDone }: { initial?: Partial<CarProfile>
           <option>km</option>
           <option>mi</option>
         </select>
+      </Field>
+      <Field label="Curb weight (kg, for the dyno)">
+        <input className={input} inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} />
       </Field>
       <div className="col-span-2">
         <Field label="VIN (read from the car when connected)">

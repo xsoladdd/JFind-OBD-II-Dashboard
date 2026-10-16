@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useConnection } from "@/lib/store/connection";
+import { DynoCard } from "./DynoCard";
 import { PerfTimerCard } from "./PerfTimerCard";
 import { TripComputer } from "./TripComputer";
 import { TripList } from "./TripList";
@@ -16,7 +17,7 @@ export function TripsPage() {
       <header>
         <h1 className="text-2xl font-bold">Trips</h1>
         <p className="text-sm text-zinc-400">
-          Trip computer, performance timer and a log of every drive.{mode === "demo" && " Demo mode: all values come from the simulator."}
+          Trip computer, performance timer, dyno estimate and a log of every drive.{mode === "demo" && " Demo mode: all values come from the simulator."}
         </p>
       </header>
 
@@ -38,6 +39,7 @@ export function TripsPage() {
         <TripComputer />
         {status === "connected" && <PerfTimerCard />}
       </div>
+      <DynoCard />
       <TripList />
       <TripSettings />
     </main>

@@ -31,6 +31,8 @@ export interface CarProfile {
   odometerUnit: OdoUnit;
   /** ISO timestamp of the last odometer update, or null. */
   odometerAt: string | null;
+  /** Curb weight in kg, for the dyno estimate. Optional: files from before it existed don't have it. */
+  weightKg?: number | null;
 }
 
 export interface ServiceEntry {
@@ -155,6 +157,7 @@ function checkProfile(p: unknown, i: number): CarProfile {
   need(numOrNull(o.odometer), `${w}.odometer must be a number ≥ 0 or null`);
   need(o.odometerUnit === "km" || o.odometerUnit === "mi", `${w}.odometerUnit must be km or mi`);
   need(o.odometerAt === null || isStr(o.odometerAt), `${w}.odometerAt must be a string or null`);
+  need(o.weightKg === undefined || numOrNull(o.weightKg), `${w}.weightKg must be a number ≥ 0, null or left out`);
   return { ...(o as unknown as CarProfile), vin: o.vin === null ? null : normalizeVin(o.vin as string) || null };
 }
 

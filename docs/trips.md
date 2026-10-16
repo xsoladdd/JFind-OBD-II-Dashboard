@@ -25,6 +25,10 @@
 - **Runs**: best per metric, plus the 20 most recent. They're saved to `trips/perf-runs.json` when the folder is ready, and re-read and merged before each write.
 - **Demo mode**: the demo car never goes above 90 km/h, so a **Demo launch** button (Demo mode only, while armed) makes the simulator do one hard launch and brake (`lib/sim/trips.ts`). These are demo values, not a real car.
 
+## Dyno
+
+The power and torque estimate (a single-gear pull) sits under the performance timer. See [dyno.md](dyno.md).
+
 ## Trip files
 
 In the linked folder (`lib/trips/files.ts`, `lib/trips/format.ts`):

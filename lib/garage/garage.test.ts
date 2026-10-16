@@ -93,6 +93,16 @@ describe("backup import validation", () => {
     expect(bad((b) => ((b.reminders as Reminder[])[0]!.dueDate = null))).toMatchObject({ ok: false });
     expect(bad((b) => (b.profiles as CarProfile[]).push(car()))).toMatchObject({ ok: false });
   });
+  it("keeps the optional curb weight backward compatible", () => {
+    expect(good.profiles[0]).not.toHaveProperty("weightKg"); // a file from before the field existed
+    expect(parseBackup(good)).toMatchObject({ ok: true });
+    for (const w of [null, 0, 1385]) {
+      const r = bad((b) => ((b.profiles as CarProfile[])[0]!.weightKg = w));
+      expect(r.ok && r.data.profiles[0]!.weightKg).toBe(w);
+    }
+    expect(bad((b) => ((b.profiles as CarProfile[])[0]!.weightKg = -5))).toMatchObject({ ok: false });
+    expect(bad((b) => ((b.profiles as CarProfile[])[0]!.weightKg = "1400" as never))).toMatchObject({ ok: false });
+  });
 });
 
 describe("through the simulator", () => {

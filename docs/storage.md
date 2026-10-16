@@ -13,6 +13,7 @@ Browsers with no folder picker (iOS/Bluefy, maybe Android Chrome) fall back to t
   garage/garage.json                the whole Garage (cars, service log, reminders), see garage.md
   garage/garage-broken-<time>.json  only if garage.json was unreadable and a backup was imported over it
   trips/<time>_<VIN|NOVIN>.json|csv trip logs (written by Trips)
+  dyno/<time>_<VIN|NOVIN>.json      dyno runs (written by the Dyno on /trips), see dyno.md
 ```
 
 `<time>` is UTC, `YYYY-MM-DDTHH-mm-ssZ` (`fileStamp()` in `lib/storage/folder.ts`).
@@ -41,7 +42,7 @@ Where `showDirectoryPicker` is **missing** but `navigator.storage.getDirectory` 
 
 ## Safety
 
-The app writes into a folder that may hold the user's own files, so `checkPath()` allows only `settings.json`, `settings-broken-*.json` and `<dir>/<file>`, where `<dir>` is in the `DIRS` list in `lib/storage/folder.ts` (`scans`, `logs`, `trips`, `garage`). A feature that saves files adds its folder there. Every segment must match `[A-Za-z0-9][A-Za-z0-9._-]*`: no `..`, no absolute paths, no hidden files, one level deep. `removeFile` works only inside those folders. Only the History page (and Trips' own list) calls it, after a confirmation. Writes use `createWritable()`, which swaps the file in on `close()`, and all file operations run one at a time.
+The app writes into a folder that may hold the user's own files, so `checkPath()` allows only `settings.json`, `settings-broken-*.json` and `<dir>/<file>`, where `<dir>` is in the `DIRS` list in `lib/storage/folder.ts` (`scans`, `logs`, `trips`, `garage`, `dyno`). A feature that saves files adds its folder there. Every segment must match `[A-Za-z0-9][A-Za-z0-9._-]*`: no `..`, no absolute paths, no hidden files, one level deep. `removeFile` works only inside those folders. Only the History page (and Trips' own list) calls it, after a confirmation. Writes use `createWritable()`, which swaps the file in on `close()`, and all file operations run one at a time.
 
 ## API (`lib/storage/folder.ts`, `lib/storage/settings.ts`)
 
@@ -50,7 +51,7 @@ useFolder()                 // { status, folderName, location: "folder" | "brows
 writeText(path, text)       // atomic; creates the subfolder; rejects with FolderUnavailableError unless "ready"
 appendText(path, text)
 readText(path)              // null if missing
-listFiles("scans" | "logs" | "trips" | "garage")
+listFiles("scans" | "logs" | "trips" | "garage" | "dyno")
 removeFile(path)
 fileStamp(date?)            // "2026-10-16T12-30-05Z"
 

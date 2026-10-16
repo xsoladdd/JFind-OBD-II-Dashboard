@@ -45,6 +45,7 @@ export const blankProfile = (over: NewProfile = {}): CarProfile => ({
   odometer: null,
   odometerUnit: "km",
   odometerAt: null,
+  weightKg: null,
   ...over,
 });
 

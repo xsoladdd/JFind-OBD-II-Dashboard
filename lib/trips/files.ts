@@ -1,6 +1,7 @@
 // Trip files in the user's folder (lib/storage/folder.ts): trips/<base>.json (summary) + trips/<base>.csv (samples).
 import { appendText, listFiles, readText, removeFile, writeText } from "../storage/folder";
-import { parseSummary, summaryJson, TRIPS_DIR, type TripSummary } from "./format";
+import type { DynoRun } from "./dyno";
+import { parseSummary, summaryJson, tripFileBase, TRIPS_DIR, type TripSummary } from "./format";
 import type { PerfRun } from "./perf";
 
 const PERF_FILE = `${TRIPS_DIR}/perf-runs.json`;
@@ -42,3 +43,34 @@ export async function loadPerfRuns(): Promise<PerfRun[]> {
 }
 
 export const savePerfRuns = (runs: PerfRun[]) => writeText(PERF_FILE, JSON.stringify(runs, null, 2) + "\n");
+
+// Dyno runs: dyno/<YYYY-MM-DDTHH-mm-ssZ>_<VIN|NOVIN>.json, one per run (docs/dyno.md).
+export const DYNO_DIR = "dyno";
+const DYNO_FORMAT = "obd-dash-dyno";
+const dynoPath = (r: Pick<DynoRun, "at" | "vin">) => `${DYNO_DIR}/${tripFileBase(r.at, r.vin)}.json`;
+
+export const saveDynoRun = (r: DynoRun) =>
+  writeText(dynoPath(r), JSON.stringify({ format: DYNO_FORMAT, version: 1, ...r }, null, 2) + "\n");
+export const deleteDynoRun = (r: DynoRun) => removeFile(dynoPath(r));
+
+export function parseDynoRun(text: string): DynoRun | null {
+  try {
+    const { format, version, ...r } = JSON.parse(text) as DynoRun & { format: unknown; version: unknown };
+    const ok =
+      format === DYNO_FORMAT && version === 1 && typeof r.at === "number" && Array.isArray(r.curve) && r.curve.length > 0 &&
+      typeof r.peakPower?.w === "number" && typeof r.peakTorque?.nm === "number" && typeof r.inputs?.curbKg === "number";
+    return ok ? r : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Every readable dyno run, newest first. Unreadable files are skipped. */
+export async function listDynoRuns(): Promise<DynoRun[]> {
+  const out: DynoRun[] = [];
+  for (const f of await listFiles(DYNO_DIR)) {
+    const r = f.name.endsWith(".json") ? parseDynoRun((await readText(`${DYNO_DIR}/${f.name}`)) ?? "") : null;
+    if (r) out.push(r);
+  }
+  return out.sort((a, b) => b.at - a.at);
+}

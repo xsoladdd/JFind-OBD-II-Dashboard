@@ -177,6 +177,23 @@ describe("browser fallback (OPFS)", () => {
     expect(root.file(`trips/${base}.csv`)).toBeUndefined();
   });
 
+  it("saves, lists and deletes dyno runs in dyno/, skipping unreadable files", async () => {
+    const root = new FakeDir("");
+    stubOpfs(root);
+    const { folder } = await boot();
+    const trips = await import("../trips/files");
+    const run = {
+      at: Date.UTC(2026, 9, 16, 12, 0, 0), vin: "wvw-zzz", curve: [{ rpm: 3000, w: 50_000, nm: 159, n: 3000 }],
+      peakPower: { w: 50_000, rpm: 3000 }, peakTorque: { nm: 159, rpm: 3000 }, inputs: { curbKg: 1400 },
+    } as never;
+    await trips.saveDynoRun(run);
+    await folder.writeText("dyno/junk.json", "{nope");
+    expect(root.file("dyno/2026-10-16T12-00-00Z_WVWZZZ.json")).toBeDefined();
+    expect(await trips.listDynoRuns()).toMatchObject([{ vin: "wvw-zzz", peakPower: { w: 50_000 } }]);
+    await trips.deleteDynoRun(run);
+    expect(await trips.listDynoRuns()).toEqual([]);
+  });
+
   it("stays unsupported when neither exists, or OPFS has no createWritable, or getDirectory fails", async () => {
     const a = await boot();
     expect(a.folder.useFolder.getState()).toMatchObject({ status: "unsupported", location: null });

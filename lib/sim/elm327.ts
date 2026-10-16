@@ -5,6 +5,7 @@ import { batteryVolts, headerLines, mode06Reply, mode09Reply, type SimBattery } 
 import { engineAt, rng, type EngineState } from "./engine";
 import { customAnswer, SIM_DEFAULT_HEADER, simHeader } from "./customPids";
 import { garageAnswer } from "./garage";
+import { withPull } from "./dyno";
 import { MORE_ENCODERS } from "./morePids";
 import { withLaunch } from "./trips";
 
@@ -168,7 +169,7 @@ export class Elm327Emulator {
 
   private answer(bytes: number[]): number[] | null {
     const [mode, pid, frameNo] = bytes;
-    const e = withLaunch({ ...engineAt(this.clock(), this.rand), ...(this.engineRunning ? {} : ENGINE_OFF) });
+    const e = withPull(withLaunch({ ...engineAt(this.clock(), this.rand), ...(this.engineRunning ? {} : ENGINE_OFF) }));
     const custom = customAnswer(this.header, bytes, e);
     if (custom !== undefined) return custom;
     const extra = garageAnswer(mode!, pid);

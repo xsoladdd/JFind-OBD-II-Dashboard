@@ -21,7 +21,7 @@ const { profiles, activeProfile, activeId, services, reminders, detectedVin } = 
 
 Actions: `load` (re-reads the file; the "Try again" button), `saveProfile`, `deleteProfile` (cascades), `setActive`, `saveService`, `deleteService`, `saveReminder`, `deleteReminder`, `readOdometerFromCar`, `identifyCar`, `dismissDetectedVin`, `exportJson`, `importJson`. Helper: `blankProfile()`. Selector: `useGarageDueCount()`.
 
-`CarProfile` (`lib/garage/model.ts`): `id, name, make, model, year, fuelType ("petrol"|"diesel"|"other"), fuelPrice (per litre, number|null), currency (free text, e.g. "SEK"), vin (uppercase|null), odometer, odometerUnit ("km"|"mi"), odometerAt`.
+`CarProfile` (`lib/garage/model.ts`): `id, name, make, model, year, fuelType ("petrol"|"diesel"|"other"), fuelPrice (per litre, number|null), currency (free text, e.g. "SEK"), vin (uppercase|null), odometer, odometerUnit ("km"|"mi"), odometerAt, weightKg?` (curb weight in kg, number|null; optional, so files from before it existed still import. The dyno uses it, see [dyno.md](dyno.md)).
 
 **Linking by VIN.** Scan history and trip logs should store the car's `vin` (not the profile `id`), then look the profile up with `findProfileByVin(profiles, vin)`. Profiles can be re-created or imported with new ids; the VIN stays stable.
 

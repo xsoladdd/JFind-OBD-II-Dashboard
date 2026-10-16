@@ -11,6 +11,7 @@ A client-only web app for the JF327 (an ELM327-style Bluetooth LE OBD-II adapter
 - **ECU** (`/ecu`): Mode 06 tests, codes per module, Mode 09 vehicle info, battery test. See [docs/ecu.md](docs/ecu.md).
 - **Garage** (`/garage`): car profiles, service log and reminders. See [docs/garage.md](docs/garage.md).
 - **Trips** (`/trips`): trip computer, performance timer, trip log with replay, GPS route. See [docs/trips.md](docs/trips.md).
+- **Dyno** (on `/trips`): a power and torque estimate from a single-gear pull. See [docs/dyno.md](docs/dyno.md).
 - **History** (`/history`) and storage: `settings.json`, scan history, Garage file and debug logs in a folder you pick, or the browser's private storage where there is no folder picker. See [docs/storage.md](docs/storage.md).
 - **PIDs** (`/pids`): about 40 more standard Mode 01 readings, and your own custom PIDs (manufacturer Mode 21/22) with a safe formula parser, header switching, Test once and JSON import/export. See [docs/custom-pids.md](docs/custom-pids.md).
 
@@ -133,3 +134,7 @@ Things I couldn't confirm without the hardware or an authoritative source:
 - [ ] **OBD standard (011C) names**: only codes 1–13 are named (from the Wikipedia J1979 reproduction); others show "Code N".
 - [ ] **O2 sensor numbering (0114–011B)**: shown as "O2 sensor 1–8". Which bank/sensor that is depends on whether the car reports 0113 (2 banks × 4) or 011D (4 banks × 2); see the "O2 sensors present" row.
 - [ ] **Mode 22 replies on a real car**: custom PIDs assume the reply is `<mode + 0x40> <PID bytes> <data>` on header-less (`ATH0`) lines, single or multi-frame. Check with a known PID from your car's documentation.
+- [ ] **Dyno loss defaults**: Crr 0.010 and CdA 0.65 m² are typical example values (Wikipedia "Rolling resistance" / "Automobile drag coefficient"), not any particular car's. Air density is fixed at the ISA sea-level 1.225 kg/m³.
+- [ ] **Dyno pull detection and ratio check** (`lib/trips/dyno.ts`): the 200 rpm drop, 50 rpm/s "climbing" rate, 1500 rpm / 2 s minimum, and 1 km/h + 5 % ratio tolerance are app defaults tuned on Demo mode and synthetic data. Check them on real pulls with the JF327.
+- [ ] **Dyno sample rate on the JF327**: how many 010C and 010D readings per second a real pull gets (Demo mode gets about 7 of each). Fewer readings mean a rougher curve; check the rate in the run's "inputs used".
+- [ ] **010D rounding**: whether the car rounds or truncates vehicle speed. Truncation biases the fitted gear ratio slightly at low speed.

@@ -247,7 +247,9 @@ describe("debug logs", () => {
     const { conn, logs, root, stop } = await recorder();
     const big = "x".repeat(Math.floor(logs.LOG_CAP * 0.45));
     const t0 = Date.UTC(2026, 9, 16, 12, 0, 0);
+    vi.useFakeTimers({ toFake: ["Date"], now: t0 }); // the first file is named by the clock: keep it before the lines' times
     conn.useConnection.setState({ status: "connecting", mode: "demo" });
+    vi.useRealTimers();
     conn.useConnection.setState({
       log: [1, 2, 3].map((id) => ({ dir: "rx" as const, text: big, t: t0 + id * 60_000, id })),
     });

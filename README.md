@@ -75,6 +75,8 @@ Custom dashboard builder and alerts (`/alerts`): see [docs/custom-dashboard-and-
 
 Folder storage (`settings.json`, scan history, debug logs, `/history`): see [docs/storage.md](docs/storage.md).
 
+Trips (`/trips`: trip computer, performance timer, trip log and replay, GPS route): see [docs/trips.md](docs/trips.md).
+
 ## [verify] list
 
 Things I couldn't confirm without the hardware or an authoritative source:
@@ -112,6 +114,9 @@ Things I couldn't confirm without the hardware or an authoritative source:
 - [ ] **Folder picker on Android Chrome**: whether `showDirectoryPicker` exists there. The app feature-detects it, and without it it shows the "can't be saved" banner.
 - [ ] **Folder re-permission on the Connect tap**: Connect starts the Bluetooth chooser first, then asks for folder access with the same tap. Check on a real device that the two prompts don't interfere. If the folder prompt fails, the **Allow access** button still works.
 - [ ] **Bluefy (iOS)**: assumed to have no folder picker, so settings last only for the session there. Older `localStorage` overrides are still read.
+- [ ] **Trip fuel estimate constants** (`lib/trips/fuel.ts`): petrol stoichiometric AFR 14.7:1 and density 745 g/L are approximations. Diesel without 015E shows "not available".
+- [ ] **Performance timer accuracy**: limited by how often the JF327 updates 010D (Demo mode gets about 6 speed readings/s alongside the other fast PIDs). OBD speed is whole km/h, and the start is the last 0 km/h reading.
+- [ ] **GPS accuracy and battery use** during trips on a real phone. Only tested with emulated positions.
 
 ## Phase 2 / 3 (not built yet)
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useDisplay } from "@/components/dashboard/live";
+import { useFolder } from "@/lib/storage/folder";
 import { useConnection } from "@/lib/store/connection";
 import { useLive } from "@/lib/store/live";
 import { bestRun, usePerf } from "@/lib/store/perf";
@@ -30,7 +31,9 @@ export function PerfTimerCard() {
   const hz = useLive((s) => s.hz);
   const demo = useConnection((s) => s.mode === "demo");
 
+  const folder = useFolder((s) => s.status);
   useEffect(() => () => usePerf.getState().disarm(), []); // fast polling only while this screen is open
+  useEffect(() => void usePerf.getState().load(), [folder]);
 
   const last = runs[0];
   const status =

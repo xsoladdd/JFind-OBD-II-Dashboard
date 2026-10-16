@@ -1,7 +1,10 @@
 import { create } from "zustand";
 import { requestFast } from "../polling";
+import { useFolder } from "../storage/folder";
+import { loadPerfRuns, savePerfRuns } from "../trips/files";
 import { analyzeRun, hasResult, PerfTimer, type PerfPhase, type PerfResult, type PerfRun } from "../trips/perf";
 import { useLive } from "./live";
+import { toast } from "./toasts";
 
 const MAX_RUNS = 20;
 
@@ -15,7 +18,13 @@ interface PerfState {
   runs: PerfRun[];
   arm: () => void;
   disarm: () => void;
+  /** Merges trips/perf-runs.json into the list (when the folder is ready). */
+  load: () => Promise<void>;
 }
+
+const ready = () => useFolder.getState().status === "ready";
+const merge = (a: PerfRun[], b: PerfRun[]) =>
+  [...new Map([...a, ...b].map((r) => [r.at, r])).values()].sort((x, y) => y.at - x.at).slice(0, MAX_RUNS);
 
 const timer = new PerfTimer();
 let release: (() => void) | null = null;
@@ -35,7 +44,12 @@ export const usePerf = create<PerfState>((set, get) => ({
       const done = timer.sample({ t: v.t, v: v.value });
       if (done) {
         const r = analyzeRun(done);
-        if (hasResult(r)) set({ runs: [{ at: done[0]!.t, ...r }, ...get().runs].slice(0, MAX_RUNS) });
+        if (hasResult(r)) {
+          const runs = merge([{ at: done[0]!.t, ...r }], get().runs);
+          set({ runs });
+          // Re-read first so a run saved from another tab (or before load() finished) isn't overwritten.
+          if (ready()) loadPerfRuns().then((saved) => savePerfRuns(merge(runs, saved))).catch((e: unknown) => toast.warn(`Couldn't save the run: ${e instanceof Error ? e.message : e}`));
+        }
       }
       set({ phase: timer.phase, ready: timer.ready, live: timer.phase === "running" ? analyzeRun(timer.run) : null });
     });
@@ -50,6 +64,11 @@ export const usePerf = create<PerfState>((set, get) => ({
     release = null;
     timer.disarm();
     set({ phase: "idle", ready: false, live: null });
+  },
+  async load() {
+    if (!ready()) return;
+    const saved = await loadPerfRuns().catch(() => []);
+    set({ runs: merge(get().runs, saved) });
   },
 }));
 

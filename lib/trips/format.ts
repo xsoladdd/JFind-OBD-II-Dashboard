@@ -1,3 +1,4 @@
+import { fileStamp } from "../storage/folder";
 import type { TripStats } from "./calc";
 
 export const TRIPS_DIR = "trips";
@@ -28,9 +29,8 @@ export interface Fix {
 
 /** `2026-10-16T12-34-56Z_<VIN or NOVIN>`: sortable, and safe as a file name everywhere. */
 export function tripFileBase(startedAt: number, vin: string | null) {
-  const iso = new Date(startedAt).toISOString().slice(0, 19).replace(/:/g, "-");
   const v = (vin ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-  return `${iso}Z_${v || "NOVIN"}`;
+  return `${fileStamp(new Date(startedAt))}_${v || "NOVIN"}`;
 }
 
 export function summaryJson(s: Omit<TripSummary, "format" | "version">): string {

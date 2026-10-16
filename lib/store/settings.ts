@@ -31,11 +31,18 @@ export const getAlertRules = () => rules(getSetting<AlertRule[]>("alerts.rules",
 
 // Trips (docs/trips.md). The stop timeout is an app default, not a standard.
 export const DEFAULT_TRIP_STOP_MIN = 5;
+const stopMin = (v: number) => (typeof v === "number" && v >= 1 && v <= 120 ? v : DEFAULT_TRIP_STOP_MIN);
 export const useTripAutoRecord = () => useSetting<boolean>("trips.autoRecord", true);
-export const getTripAutoRecord = () => getSetting<boolean>("trips.autoRecord", true);
-export const useTripStopMin = () => useSetting<number>("trips.stopTimeoutMin", DEFAULT_TRIP_STOP_MIN);
-export const getTripStopMin = () => getSetting<number>("trips.stopTimeoutMin", DEFAULT_TRIP_STOP_MIN);
-/** Location is sensitive: off unless the user turns it on. */
-export const useTripGps = () => useSetting<boolean>("trips.gps", false);
-export const getTripGps = () => getSetting<boolean>("trips.gps", false);
+export const getTripAutoRecord = () => getSetting<boolean>("trips.autoRecord", true) !== false;
+export const useTripStopMin = (): [number, (v: number) => void] => {
+  const [v, set] = useSetting<number>("trips.stopTimeoutMin", DEFAULT_TRIP_STOP_MIN);
+  return [stopMin(v), set];
+};
+export const getTripStopMin = () => stopMin(getSetting<number>("trips.stopTimeoutMin", DEFAULT_TRIP_STOP_MIN));
+/** Location is sensitive: off unless the user turns it on (anything but `true` in settings.json counts as off). */
+export const useTripGps = (): [boolean, (v: boolean) => void] => {
+  const [v, set] = useSetting<boolean>("trips.gps", false);
+  return [v === true, set];
+};
+export const getTripGps = () => getSetting<boolean>("trips.gps", false) === true;
 export const usePerfNoticeSeen = () => useSetting<boolean>("trips.perfNoticeSeen", false);

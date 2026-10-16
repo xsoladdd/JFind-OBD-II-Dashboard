@@ -5,15 +5,21 @@ export interface UuidOverrides {
   service: string;
   notify: string;
   write: string;
+  /** "auto" prefers writeWithoutResponse when the characteristic offers it (README [verify]). */
+  writeMethod: WriteMethod;
 }
 
-export const EMPTY_OVERRIDES: UuidOverrides = { service: "", notify: "", write: "" };
+export type WriteMethod = "auto" | "with-response" | "without-response";
+export const WRITE_METHODS: WriteMethod[] = ["auto", "with-response", "without-response"];
+
+export const EMPTY_OVERRIDES: UuidOverrides = { service: "", notify: "", write: "", writeMethod: "auto" };
 
 export function loadOverrides(): UuidOverrides {
   // settings.json is user-editable: keep only string fields.
   const o = getSetting<Partial<Record<keyof UuidOverrides, unknown>> | null>("ble.uuids", null) ?? {};
   const str = (v: unknown) => (typeof v === "string" ? v : "");
-  return { service: str(o.service), notify: str(o.notify), write: str(o.write) };
+  const method = WRITE_METHODS.find((m) => m === o.writeMethod) ?? "auto";
+  return { service: str(o.service), notify: str(o.notify), write: str(o.write), writeMethod: method };
 }
 
 export function saveOverrides(o: UuidOverrides) {

@@ -3,10 +3,12 @@
 import { FolderCard } from "@/components/storage/FolderCard";
 import { useFolder } from "@/lib/storage/folder";
 import { useConnection } from "@/lib/store/connection";
+import { AdapterInfoCard } from "./AdapterInfoCard";
 import { CompatBanner } from "./CompatBanner";
 import { DebugConsole } from "./DebugConsole";
 import { useHasBluetooth } from "./hooks";
 import { StatusCard } from "./StatusCard";
+import { Troubleshooting } from "./Troubleshooting";
 import { UuidSettings } from "./UuidSettings";
 
 const STEPS = [
@@ -61,6 +63,8 @@ export function ConnectScreen() {
       </section>
 
       <StatusCard />
+      <AdapterInfoCard />
+      <Troubleshooting />
       <FolderCard />
       <DebugConsole />
       <UuidSettings />

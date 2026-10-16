@@ -28,8 +28,8 @@ export function DebugConsole() {
   };
 
   return (
-    <details className="rounded-lg border border-zinc-800 bg-zinc-900">
-      <summary className="cursor-pointer select-none px-4 py-3 font-semibold">Debug console</summary>
+    <details id="debug-console" className="rounded-lg border border-zinc-800 bg-zinc-900">
+      <summary className="min-h-11 cursor-pointer select-none px-4 py-3 font-semibold">Debug console</summary>
       <div className="space-y-4 px-4 pb-4">
         <div
           ref={logRef}

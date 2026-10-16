@@ -1,10 +1,19 @@
 # OBD Dash
 
-A client-only web app for the JF327 (an ELM327-style Bluetooth LE OBD-II adapter). It connects over Web Bluetooth, runs the ELM327 init and talks OBD-II to the car. Everything runs in the browser: there is no backend and no cloud API, so nothing leaves the device.
+A client-only web app for the JF327 (an ELM327-style Bluetooth LE OBD-II adapter). It connects over Web Bluetooth, runs the ELM327 init and talks OBD-II to the car. Everything runs in the browser: there is no backend and no cloud API, so nothing leaves the device. It has not been tested on the real adapter yet.
 
-**Status: phase 1.** This phase covers the transport and ELM layer, OBD decoding, a full ELM327 simulator and the connect screen with a raw debug console. The Diagnostics page (phase 2) and the dashboard themes (phase 3) are not built yet.
+## What it does
 
-**Diagnostics** (`/diagnostics`): codes, freeze frame, readiness, safe clear, export, scans saved to your folder. See [docs/diagnostics.md](docs/diagnostics.md).
+- **Connect** (`/`): Web Bluetooth connection, an adapter info card, a troubleshooting guide, adapter profiles (saved UUID and write-method sets), a raw debug console and Demo mode. See [docs/connection-helper.md](docs/connection-helper.md).
+- **Dashboard** (`/dashboard`): live gauges in six themes (Classic, Sport, Minimal, Engineer, HUD, Custom) on a priority polling scheduler. See [docs/dashboard.md](docs/dashboard.md).
+- **Custom dashboard builder and alerts** (`/alerts`): your own layouts, and alert rules with sound and vibration. See [docs/custom-dashboard-and-alerts.md](docs/custom-dashboard-and-alerts.md).
+- **Diagnostics** (`/diagnostics`): codes, freeze frame, readiness, safe clear, export, scans saved to your folder, and a per-code history across saved scans. See [docs/diagnostics.md](docs/diagnostics.md) and [docs/code-history.md](docs/code-history.md).
+- **ECU** (`/ecu`): Mode 06 tests, codes per module, Mode 09 vehicle info, battery test. See [docs/ecu.md](docs/ecu.md).
+- **Garage** (`/garage`): car profiles, service log and reminders. See [docs/garage.md](docs/garage.md).
+- **Trips** (`/trips`): trip computer, performance timer, trip log with replay, GPS route. See [docs/trips.md](docs/trips.md).
+- **History** (`/history`) and storage: `settings.json`, scan history, Garage file and debug logs in a folder you pick, or the browser's private storage where there is no folder picker. See [docs/storage.md](docs/storage.md).
+
+On phones the bottom bar shows four main pages (Dashboard, Diagnostics, Garage, Trips) plus **More**, which lists the rest. The sidebar on larger screens lists everything. The page list lives in `lib/nav.ts`.
 
 ## Setup
 
@@ -46,11 +55,13 @@ The adapter's GATT layout is not documented, so the app probes a list of common 
 
 1. Plug in the adapter, ignition on, open the app in Chrome and tap **Connect**. Pick the adapter.
 2. Open **Debug console**. Under *GATT services & characteristics* you'll see every service and characteristic the adapter exposes, with their properties, and which ones were picked (`← notify`, `← write`).
-3. If init hangs or the traffic log stays empty, the pick was probably wrong. Open **Settings: Bluetooth UUIDs**, enter the service, notify and write UUIDs from the list (short `fff1` or full 128-bit form), Save, then Disconnect and Connect again.
+3. If init hangs or the traffic log stays empty, the pick was probably wrong. Open **Settings: adapter profiles and Bluetooth UUIDs**, enter the service, notify and write UUIDs from the list (short `fff1` or full 128-bit form), Save, then Disconnect and Connect again.
 4. If the adapter's service is not in the candidate list, it won't show up at all, because Web Bluetooth only exposes services listed in `optionalServices`. Enter the service UUID in Settings anyway: it is added to the list on the next Connect. Tools like nRF Connect can show the UUID.
 5. Please report what you find so the defaults can be updated (`lib/transport/WebBluetoothTransport.ts`).
 
 The overrides are saved as `ble.uuids` in `settings.json` in the folder you link (see [docs/storage.md](docs/storage.md)).
+
+Once something works, save it as a named **profile** (service, notify and write UUIDs, write method) under **Settings: adapter profiles**, and pick it before connecting. Profiles can be exported and imported as JSON. The Connect screen's **Adapter info** card and **Copy diagnostics** button show what the adapter reported and put a summary plus the last 50 debug lines on the clipboard, and the **Troubleshooting guide** opens on the step that matches a failure. Details: [docs/connection-helper.md](docs/connection-helper.md).
 
 The raw terminal sends any AT/OBD command and shows the replies exactly as they arrive. `␍` and `␊` mark CR and LF, and each `←` line is one BLE notification.
 
@@ -61,23 +72,12 @@ lib/transport/   Transport interface; WebBluetoothTransport, SimulatorTransport;
 lib/elm/         ElmClient: serial queue, chunk assembly to ">", cleanup → typed ElmError, init, auto-reconnect
 lib/obd/         PID registry + decoders, supported-PID bitmasks, ISO-TP/multi-line parsing, VIN, DTC decode
 lib/sim/         ELM327 emulator + fake engine model (used by Demo mode and tests)
-lib/store/       Zustand connection store; getClient() shares the one ElmClient with later phases
-components/connect/  Connect screen, status, debug console, UUID settings
+lib/store/       Zustand connection store; getClient() shares the one ElmClient with every feature
+lib/connect/     Adapter info, troubleshooting steps, adapter profiles, diagnostics text
+components/connect/  Connect screen, status, adapter info, troubleshooting, debug console, profile editor
 ```
 
 Layers only depend downward (store → elm → transport, obd → elm types), and everything below `components/` is plain TypeScript tested with Vitest.
-
-Garage (car profiles, service log, reminders): see [docs/garage.md](docs/garage.md).
-Live dashboard, polling Scheduler and live-data API: see [docs/dashboard.md](docs/dashboard.md).
-
-Advanced diagnostics (`/ecu`: Mode 06, codes per module, Mode 09, battery test): see [docs/ecu.md](docs/ecu.md).
-Custom dashboard builder and alerts (`/alerts`): see [docs/custom-dashboard-and-alerts.md](docs/custom-dashboard-and-alerts.md).
-
-Folder storage (`settings.json`, scan history, Garage file, debug logs, `/history`; falls back to the browser's private storage where there is no folder picker): see [docs/storage.md](docs/storage.md).
-
-Code history (per-code timeline across saved scans, on `/diagnostics`): see [docs/code-history.md](docs/code-history.md).
-
-Trips (`/trips`: trip computer, performance timer, trip log and replay, GPS route): see [docs/trips.md](docs/trips.md).
 
 ## [verify] list
 
@@ -123,7 +123,7 @@ Things I couldn't confirm without the hardware or an authoritative source:
 - [ ] **GPS accuracy and battery use** during trips on a real phone. Only tested with emulated positions.
 - [ ] **Code history rules** (`lib/diagnostics/history.ts`): "came back after clear", "cleared" and the status priority (active > permanent > pending, gone / unknown) are app logic, not from SAE J1979. Check they match how a mechanic reads a scan history.
 - [ ] **Demo P0133 return**: after a clear, Demo mode brings P0133 back as a pending code so the history has something to show. Not a real car's behaviour.
-
-## Phase 2 / 3 (not built yet)
-
-Diagnostics (MIL + DTC count from 0101, Mode 03/07/0A, freeze frame, Mode 04 clear behind a confirmation, VIN, readiness, export, scan history), a priority polling scheduler, dashboard themes, PWA, Wake Lock, metric/imperial toggle. `lib/obd/requests.ts` already has `readDtcs`, `clearDtcs` and `readVin`, which the simulator tests exercise.
+- [ ] **`AT@1` on the JF327**: clones often answer `?`. The adapter info card shows "not supported" in that case. Check what the real adapter says.
+- [ ] **Write method on the JF327**: whether it needs "with response" writes. The write method select in the adapter profile forces one; "auto" prefers "without response" when offered.
+- [ ] **Troubleshooting guide wording**: the steps are general ELM327 and Web Bluetooth guidance, not JF327-specific. Check they match what actually fixes problems on the JF327.
+- [ ] **Clipboard on Bluefy (iOS)**: whether **Copy diagnostics** can write to the clipboard there. If not, the text is shown in a box to copy by hand.

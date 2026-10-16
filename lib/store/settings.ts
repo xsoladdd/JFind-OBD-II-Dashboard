@@ -1,4 +1,6 @@
+import { useMemo } from "react";
 import type { AlertRule } from "../alerts/rules";
+import { sanitizeProfiles, type AdapterProfile } from "../connect/profiles";
 import { EMPTY_LAYOUTS, type CustomLayouts } from "../dashboard/layouts";
 import type { UnitSystem } from "../units";
 import { getSetting, useSetting } from "../storage/settings";
@@ -46,3 +48,10 @@ export const useTripGps = (): [boolean, (v: boolean) => void] => {
 };
 export const getTripGps = () => getSetting<boolean>("trips.gps", false) === true;
 export const usePerfNoticeSeen = () => useSetting<boolean>("trips.perfNoticeSeen", false);
+
+// Adapter profiles (docs/connection-helper.md): named UUID + write-method sets. The active settings stay in "ble.uuids".
+const NO_PROFILES: AdapterProfile[] = [];
+export const useAdapterProfiles = (): [AdapterProfile[], (v: AdapterProfile[]) => void] => {
+  const [v, set] = useSetting<unknown>("ble.profiles", NO_PROFILES);
+  return [useMemo(() => sanitizeProfiles(v), [v]), set];
+};

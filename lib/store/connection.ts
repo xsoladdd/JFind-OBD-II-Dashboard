@@ -9,6 +9,16 @@ import { WebBluetoothTransport, type GattServiceInfo } from "../transport/WebBlu
 export type ConnStatus = "idle" | "connecting" | "connected" | "reconnecting" | "error";
 export type LogLine = TrafficEvent & { id: number };
 
+/** Why the last connect() failed, kept structured so the troubleshooting guide doesn't parse message text. */
+export interface ConnectFailure {
+  /** Error name, e.g. "NotFoundError" (chooser cancelled), "NetworkError" (GATT) or "NoCharacteristicError". */
+  name: string;
+  code?: ElmErrorCode;
+  command?: string;
+  /** True when the Bluetooth link was up and the failure came later, during the ELM init. */
+  afterTransport: boolean;
+}
+
 const LOG_LIMIT = 500;
 
 interface ConnectionState {
@@ -20,9 +30,12 @@ interface ConnectionState {
   vehicleError: ElmErrorCode | null;
   voltage: string;
   error: string;
+  failure: ConnectFailure | null;
   log: LogLine[];
   gatt: GattServiceInfo[];
   selected: { notify: string; write: string } | null;
+  /** How writes go out on the real adapter (null in Demo mode or before the characteristics are chosen). */
+  writeMethod: "with-response" | "without-response" | null;
   connect: (mode: "ble" | "demo") => Promise<void>;
   disconnect: () => Promise<void>;
   sendRaw: (cmd: string) => Promise<void>;
@@ -63,9 +76,11 @@ export const useConnection = create<ConnectionState>((set, get) => {
     vehicleError: null,
     voltage: "",
     error: "",
+    failure: null,
     log: [],
     gatt: [],
     selected: null,
+    writeMethod: null,
 
     async connect(mode) {
       if (client) await get().disconnect();
@@ -80,7 +95,7 @@ export const useConnection = create<ConnectionState>((set, get) => {
           set({ status: "connected", elmVersion: info.elmVersion, protocol: info.protocol, vehicleError: info.vehicleError ?? null });
         else if (s === "disconnected") set({ status: "idle", voltage: "" });
       });
-      set({ status: "connecting", mode, error: "", vehicleError: null, protocol: "", elmVersion: "", voltage: "", gatt: [], selected: null });
+      set({ status: "connecting", mode, error: "", failure: null, vehicleError: null, protocol: "", elmVersion: "", voltage: "", gatt: [], selected: null, writeMethod: null });
       try {
         const info = await c.connect();
         if (client !== c) return; // superseded by another connect/disconnect while initialising
@@ -94,13 +109,19 @@ export const useConnection = create<ConnectionState>((set, get) => {
       } catch (e) {
         if (client !== c) return;
         append({ dir: "error", text: errMsg(e), t: Date.now() });
-        set({ status: "error", error: errMsg(e) });
+        const failure: ConnectFailure = {
+          name: e instanceof Error ? e.name : "Error",
+          code: e instanceof ElmError ? e.code : undefined,
+          command: e instanceof ElmError ? e.command : undefined,
+          afterTransport: c.isOpen,
+        };
+        set({ status: "error", error: errMsg(e), failure });
         client = null;
         await c.disconnect().catch(() => {});
       } finally {
         if (transport instanceof WebBluetoothTransport) {
           // Keep what we discovered even on failure: that is exactly when the user needs the UUIDs.
-          set({ gatt: transport.gatt, selected: transport.selected, deviceName: transport.deviceName });
+          set({ gatt: transport.gatt, selected: transport.selected, writeMethod: transport.writeMethod, deviceName: transport.deviceName });
         } else {
           set({ deviceName: "Simulator (demo)" });
         }

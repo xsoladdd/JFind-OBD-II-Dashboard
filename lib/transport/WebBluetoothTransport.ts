@@ -40,6 +40,8 @@ export class WebBluetoothTransport implements Transport {
   /** Everything discovered on the last connect, for the debug panel. */
   gatt: GattServiceInfo[] = [];
   selected: { notify: string; write: string } | null = null;
+  /** How writes really go out, once connected: decided by the override and what the characteristic offers. */
+  writeMethod: "with-response" | "without-response" | null = null;
   deviceName = "";
 
   private device: BluetoothDevice | null = null;
@@ -102,8 +104,11 @@ export class WebBluetoothTransport implements Transport {
       ? byUuid(this.overrides.write)
       : (pool.find((x) => x.service === notify?.service && canWrite(x.char)) ?? pool.find((x) => canWrite(x.char)));
     if (!notify || !write) {
-      throw new Error(
-        "No usable notify/write characteristic found. Open the debug console to see what the adapter exposes, then set the UUIDs in Settings.",
+      throw Object.assign(
+        new Error(
+          "No usable notify/write characteristic found. Open the debug console to see what the adapter exposes, then set the UUIDs in Settings.",
+        ),
+        { name: "NoCharacteristicError" },
       );
     }
 
@@ -112,8 +117,17 @@ export class WebBluetoothTransport implements Transport {
     this.notifyChar = notify.char;
     this.writeChar = write.char;
     this.selected = { notify: notify.char.uuid, write: write.char.uuid };
+    this.writeMethod = this.pickWriteMethod(write.char);
     this.notifyChar.addEventListener("characteristicvaluechanged", this.onValue);
     await this.notifyChar.startNotifications();
+  }
+
+  private pickWriteMethod(c: BluetoothRemoteGATTCharacteristic) {
+    const want = this.overrides.writeMethod;
+    if (want === "without-response" && c.properties.writeWithoutResponse) return "without-response";
+    if (want === "with-response" && c.properties.write) return "with-response";
+    // "auto", or the forced method isn't offered by this characteristic: fall back to what it has.
+    return c.properties.writeWithoutResponse ? "without-response" : "with-response";
   }
 
   private onValue = (e: Event) => {
@@ -131,7 +145,7 @@ export class WebBluetoothTransport implements Transport {
     const bytes = new TextEncoder().encode(text);
     for (let i = 0; i < bytes.length; i += WRITE_CHUNK) {
       const part = bytes.slice(i, i + WRITE_CHUNK);
-      if (c.properties.writeWithoutResponse) await c.writeValueWithoutResponse(part);
+      if (this.writeMethod === "without-response") await c.writeValueWithoutResponse(part);
       else await c.writeValueWithResponse(part);
     }
   }

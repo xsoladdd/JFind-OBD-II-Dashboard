@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { describeProtocol } from "@/lib/elm/protocols";
 import { useConnection, type ConnStatus } from "@/lib/store/connection";
 
@@ -27,7 +28,12 @@ export function ConnectionChip() {
   const proto = protocol ? describeProtocol(protocol).name : "";
 
   return (
-    <div className="flex min-w-0 items-center gap-2 text-xs sm:text-sm" aria-live="polite">
+    <Link
+      href="/"
+      title="Open the Connect screen"
+      className="flex min-h-11 min-w-0 items-center gap-2 text-xs sm:text-sm"
+      aria-live="polite"
+    >
       <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${DOT[status]}`} aria-hidden />
       <span className="shrink-0 font-semibold">
         {LABEL[status]}
@@ -39,6 +45,6 @@ export function ConnectionChip() {
         </span>
       )}
       {voltage && <span className="shrink-0 font-mono tabular-nums text-zinc-200">{voltage}</span>}
-    </div>
+    </Link>
   );
 }

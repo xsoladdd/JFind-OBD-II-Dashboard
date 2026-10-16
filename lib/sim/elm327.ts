@@ -1,5 +1,6 @@
 import { encodeDtc } from "../obd/dtc";
 import { hex2 } from "../obd/supported";
+import { batteryVolts, headerLines, mode06Reply, mode09Reply, type SimBattery } from "./advanced";
 import { engineAt, rng, type EngineState } from "./engine";
 import { garageAnswer } from "./garage";
 
@@ -40,7 +41,7 @@ export const SIM_DTCS = { stored: ["P0133", "P0420"], pending: ["P0300"], perman
 const FREEZE_PIDS = [0x04, 0x05, 0x0c, 0x0d, 0x11];
 
 /** Bitmask for range base: bits for supported PIDs in base+1..base+0x20, last bit = next range exists. */
-function bitmask(base: number, supported: number[]): number[] {
+export function bitmask(base: number, supported: number[]): number[] {
   const bytes = [0, 0, 0, 0];
   for (const pid of supported) {
     const i = pid - base - 1;
@@ -63,6 +64,9 @@ export class Elm327Emulator {
   private spaces = true;
   private protocolSet = "0";
   private detected = false;
+  private headers = false;
+  /** Set by the /ecu battery test in Demo mode; null keeps the plain 12.4 / 14.1 V behaviour. */
+  battery: SimBattery | null = null;
   private stored = [...SIM_DTCS.stored];
   private pending = [...SIM_DTCS.pending];
   private permanent = [...SIM_DTCS.permanent];
@@ -94,13 +98,17 @@ export class Elm327Emulator {
     const flag = (prefix: string) => cmd === `${prefix}1` || cmd === `${prefix}0`;
     if (cmd === "ATZ" || cmd === "ATWS") {
       this.echo = this.linefeeds = this.spaces = true;
+      this.headers = false;
       this.protocolSet = "0";
       this.detected = false;
       return ["", "ELM327 v1.5"];
     }
     if (cmd === "ATI") return ["ELM327 v1.5"];
     if (cmd === "AT@1") return ["OBDII to RS232 Interpreter"];
-    if (cmd === "ATRV") return [`${((this.detected ? 14.1 : 12.4) + (this.rand() - 0.5) * 0.1).toFixed(1)}V`];
+    if (cmd === "ATRV") {
+      const base = this.battery ? batteryVolts(this.battery) : this.detected ? 14.1 : 12.4;
+      return [`${(base + (this.rand() - 0.5) * 0.1).toFixed(1)}V`];
+    }
     if (cmd === "ATDPN") {
       if (this.protocolSet !== "0") return [this.protocolSet];
       return [this.detected ? "A6" : "A0"];
@@ -114,8 +122,8 @@ export class Elm327Emulator {
       this.protocolSet = cmd.slice(4);
       this.detected = false;
     }
-    // shortcut: ATH1 is accepted but replies stay header-less; emulate CAN headers if phase 2 needs ATH1.
-    else if (!(flag("ATH") || /^ATAT[012]$/.test(cmd) || /^ATST[0-9A-F]{2}$/.test(cmd) || cmd === "ATD" || flag("ATM")))
+    else if (flag("ATH")) this.headers = cmd.endsWith("1");
+    else if (!(/^ATAT[012]$/.test(cmd) || /^ATST[0-9A-F]{2}$/.test(cmd) || cmd === "ATD" || flag("ATM")))
       return ["?"];
     return ["OK"];
   }
@@ -127,6 +135,10 @@ export class Elm327Emulator {
     this.detected = true;
     const bytes = cmd.match(/../g)!.map((h) => parseInt(h, 16));
     const reply = this.answer(bytes);
+    if (this.headers) {
+      const lines = headerLines(bytes, reply, this.spaces);
+      return [...prefix, ...(lines.length ? lines : ["NO DATA"])];
+    }
     return [...prefix, ...(reply ? this.frame(reply) : ["NO DATA"])];
   }
 
@@ -158,9 +170,10 @@ export class Elm327Emulator {
         this.freeze = null; // permanent codes survive a clear, as on a real car
         return [0x44];
       case 0x09:
-        if (pid === 0x00) return [0x49, 0x00, 0x40, 0x00, 0x00, 0x00];
         if (pid === 0x02) return [0x49, 0x02, 0x01, ...[...SIM_VIN].map((c) => c.charCodeAt(0))];
-        return null;
+        return mode09Reply(pid);
+      case 0x06:
+        return mode06Reply(pid);
       default:
         return null;
     }

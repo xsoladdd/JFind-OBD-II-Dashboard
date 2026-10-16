@@ -67,6 +67,8 @@ Layers only depend downward (store → elm → transport, obd → elm types), an
 
 Garage (car profiles, service log, reminders): see [docs/garage.md](docs/garage.md).
 
+Advanced diagnostics (`/ecu`: Mode 06, codes per module, Mode 09, battery test): see [docs/ecu.md](docs/ecu.md).
+
 ## [verify] list
 
 Things I couldn't confirm without the hardware or an authoritative source:
@@ -82,6 +84,16 @@ Things I couldn't confirm without the hardware or an authoritative source:
 - [ ] **Odometer PID 01A6** (Garage): which cars report it, and that the 0.1 km/bit decode (SAE J1979) matches. Many cars don't; the app falls back to manual entry.
 - [ ] **Garage VIN auto-select**: needs Mode 09 PID 02 on the real car; if the JF327/car doesn't answer, the user selects the car by hand.
 - [ ] **Garage due-soon windows**: 30 days / 1000 km are app defaults, not manufacturer intervals.
+- [ ] **Mode 06 UASID table** (`lib/ecu/mode06.ts`): the scaling and units were cross-checked against a public reproduction of SAE J1979 Appendix E, not the standard itself. Unlisted UASIDs show raw.
+- [ ] **Mode 06 MID names**: same source as the UASID table.
+- [ ] **Mode 06 on non-CAN protocols**: shown raw and not decoded. Confirm the raw `0600` reply is useful on a J1850/ISO 9141/KWP car.
+- [ ] **ATH1 frame format on the JF327**: the parser assumes `<CAN ID><PCI byte><data>` per line, with or without spaces and with or without CAN padding. Check a real `ATH1` + `03` reply in the debug console.
+- [ ] **ECU address hints**: "usually Engine" (7E8) and "usually Transmission" (7E9) are a convention, not part of ISO 15765-4. The module's own 090A name is preferred.
+- [ ] **Mode 09 IPT counter names** (0908, from a public J1979 reproduction). 090B counters are unnamed.
+- [ ] **ECU name (090A) layout**: assumed 20 bytes of ASCII, null-padded.
+- [ ] **Battery bands** (general 12 V lead-acid guidance, not manufacturer specs): resting 12.6 / 12.4 / 12.0 V, cranking 9.6 V, charging 13.2 V and 14.8 V.
+- [ ] **ATRV accuracy**: the adapter measures at OBD pin 16, not at the battery terminals. Compare it with a multimeter on the JF327.
+- [ ] **ATRV sample rate over BLE**: how many readings per second the crank window really gets on the JF327. A shorter dip than that is missed.
 
 ## Phase 2 / 3 (not built yet)
 

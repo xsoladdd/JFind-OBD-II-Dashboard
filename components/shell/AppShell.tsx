@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useEffect, type ReactNode } from "react";
-import { useSettings } from "@/lib/store/settings";
 import { watchConnection } from "@/lib/store/toasts";
 import { ConnectionChip } from "./ConnectionChip";
 import { NavLinks } from "./NavLinks";
@@ -9,7 +8,6 @@ import { Toaster } from "./Toaster";
 
 export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
-    void useSettings.persist.rehydrate();
     if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator)
       navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" }).catch(() => {});
     return watchConnection();

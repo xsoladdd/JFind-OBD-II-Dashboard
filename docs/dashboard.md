@@ -60,11 +60,23 @@ In Demo mode the simulator manages about 35 to 45 Hz. A real BLE adapter will be
 
 ## Units: `lib/units.ts` + `lib/store/settings.ts`
 
-`useSettings` (localStorage `obd-dash.settings`) holds `units`, `theme`, `redlineRpm` and `hudMirror`. Convert at display time:
+Each persisted setting has its own hook in `lib/store/settings.ts`, which returns `[value, set]`:
+
+| Hook | Key | Default |
+| --- | --- | --- |
+| `useUnits()` (plain TS: `getUnits()`) | `units` | `"metric"` |
+| `useTheme()` | `dashboard.theme` | `"classic"` |
+| `useRedline()` | `dashboard.redlineRpm` | `6500` |
+| `useHudMirror()` | `dashboard.hudMirror` | `false` |
+
+For now they're backed by `lib/store/localSettings.ts`, a localStorage stand-in with the same `getSetting` / `setSetting` / `useSetting` signatures as JOID-0006's `lib/storage/settings.ts` (settings.json in a folder the user picks). Switching is the one import line in `lib/store/settings.ts`; after that, delete the stand-in.
+
+Convert at display time:
 
 ```ts
 import { toDisplay } from "@/lib/units";
-toDisplay(100, "km/h", useSettings.getState().units); // { value: 62.14, unit: "mph" }
+import { getUnits } from "@/lib/store/settings";
+toDisplay(100, "km/h", getUnits()); // { value: 62.14, unit: "mph" }
 ```
 
 This covers km/h, km, °C, kPa, L, L/h and L/100km (to US mpg, US gallons). Units it doesn't know are returned unchanged. Store and export raw metric values, and convert only for display.

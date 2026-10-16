@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { startRecording, toCsv } from "@/lib/dashboard/recorder";
 import { liveDef, useLive } from "@/lib/store/live";
-import { useSettings } from "@/lib/store/settings";
+import { useUnits } from "@/lib/store/settings";
 import { toDisplay } from "@/lib/units";
 import { LineChart, type Series } from "../LineChart";
 import { fmt, SERIES } from "../live";
@@ -21,7 +21,7 @@ function download(name: string, text: string) {
 
 export function Engineer() {
   const { supported, values } = useLive();
-  const units = useSettings((s) => s.units);
+  const [units] = useUnits();
   // id → palette slot; a series keeps its colour while shown.
   const [shown, setShown] = useState<Record<string, number>>({ "010C": 0, "010D": 1, "0111": 2 });
   const [rec, setRec] = useState<ReturnType<typeof startRecording> | null>(null);

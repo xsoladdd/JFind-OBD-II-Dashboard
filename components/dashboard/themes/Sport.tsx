@@ -1,7 +1,7 @@
 "use client";
 
 import { SHIFT_START } from "@/lib/dashboard/zones";
-import { useSettings } from "@/lib/store/settings";
+import { useRedline } from "@/lib/store/settings";
 import { arcPath } from "../Gauge";
 import { fmt, useDisplay } from "../live";
 
@@ -24,7 +24,7 @@ function ShiftLights({ rpm, redline }: { rpm: number; redline: number }) {
 }
 
 export function Sport() {
-  const redline = useSettings((s) => s.redlineRpm);
+  const [redline] = useRedline();
   const rpm = useDisplay("010C");
   const speed = useDisplay("010D");
   const coolant = useDisplay("0105");

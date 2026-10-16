@@ -2,14 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { COOLANT_HOT_C } from "@/lib/dashboard/zones";
-import { useSettings } from "@/lib/store/settings";
+import { useHudMirror, useRedline } from "@/lib/store/settings";
 import { fmt, useDisplay } from "../live";
 
 /** High-contrast heads-up display. Mirror flips it for reading as a windshield reflection. */
 export function Hud() {
-  const mirror = useSettings((s) => s.hudMirror);
-  const update = useSettings((s) => s.update);
-  const redline = useSettings((s) => s.redlineRpm);
+  const [mirror, setMirror] = useHudMirror();
+  const [redline] = useRedline();
   const speed = useDisplay("010D");
   const rpm = useDisplay("010C");
   const coolant = useDisplay("0105");
@@ -37,7 +36,7 @@ export function Hud() {
   return (
     <div ref={ref} className={`flex flex-col bg-black text-white ${full ? "fixed inset-0 z-50" : "min-h-[60vh] rounded-xl"}`}>
       <div className="flex justify-end gap-2 p-2 text-sm">
-        <button onClick={() => update({ hudMirror: !mirror })} aria-pressed={mirror} className="rounded-md border border-zinc-700 px-3 py-1.5 text-zinc-300">
+        <button onClick={() => setMirror(!mirror)} aria-pressed={mirror} className="rounded-md border border-zinc-700 px-3 py-1.5 text-zinc-300">
           Mirror
         </button>
         <button onClick={toggleFull} className="rounded-md border border-zinc-700 px-3 py-1.5 text-zinc-300">

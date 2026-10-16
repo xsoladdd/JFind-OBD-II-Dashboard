@@ -1,7 +1,7 @@
 "use client";
 
 import { COOLANT_HOT_C, FUEL_LOW_PCT } from "@/lib/dashboard/zones";
-import { useSettings } from "@/lib/store/settings";
+import { useRedline } from "@/lib/store/settings";
 import { Gauge } from "../Gauge";
 import { useDisplay } from "../live";
 
@@ -9,7 +9,7 @@ const RED = "#e66767";
 const AMBER = "#c98500";
 
 export function Classic() {
-  const redline = useSettings((s) => s.redlineRpm);
+  const [redline] = useRedline();
   const rpm = useDisplay("010C");
   const speed = useDisplay("010D");
   const coolant = useDisplay("0105");

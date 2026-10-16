@@ -5,7 +5,7 @@ import { useState } from "react";
 import { usePolling } from "@/lib/polling";
 import { useConnection } from "@/lib/store/connection";
 import { useLive } from "@/lib/store/live";
-import { useSettings, type ThemeId } from "@/lib/store/settings";
+import { useRedline, useTheme, useUnits, type ThemeId } from "@/lib/store/settings";
 import { useMounted } from "../connect/hooks";
 import { Classic } from "./themes/Classic";
 import { Engineer } from "./themes/Engineer";
@@ -48,7 +48,9 @@ export function Dashboard() {
   const mounted = useMounted();
   const status = useConnection((s) => s.status);
   const hz = useLive((s) => s.hz);
-  const { theme, units, redlineRpm, update } = useSettings();
+  const [theme, setTheme] = useTheme();
+  const [units, setUnits] = useUnits();
+  const [redlineRpm, setRedline] = useRedline();
   const [draft, setDraft] = useState<string | null>(null);
   const View = THEMES.find((t) => t.id === theme)?.view ?? Classic;
 
@@ -61,7 +63,7 @@ export function Dashboard() {
               key={t.id}
               role="tab"
               aria-selected={theme === t.id}
-              onClick={() => update({ theme: t.id })}
+              onClick={() => setTheme(t.id)}
               className={`shrink-0 rounded-md px-3 py-1.5 text-sm font-medium ${theme === t.id ? "bg-zinc-700 text-white" : "text-zinc-400 hover:text-zinc-200"}`}
             >
               {t.label}
@@ -69,7 +71,7 @@ export function Dashboard() {
           ))}
         </div>
         <button
-          onClick={() => update({ units: units === "metric" ? "imperial" : "metric" })}
+          onClick={() => setUnits(units === "metric" ? "imperial" : "metric")}
           className="rounded-lg border border-zinc-800 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-900"
           aria-label={`Units: ${units}. Switch`}
         >
@@ -87,7 +89,7 @@ export function Dashboard() {
             onChange={(e) => {
               setDraft(e.currentTarget.value); // let partial input like "6" through while typing
               const v = e.currentTarget.valueAsNumber;
-              if (v >= 1000 && v <= 12000) update({ redlineRpm: v });
+              if (v >= 1000 && v <= 12000) setRedline(v);
             }}
             onBlur={() => setDraft(null)}
             className="w-16 bg-transparent font-mono text-zinc-100 outline-none"

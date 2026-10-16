@@ -2,14 +2,14 @@
 
 import { toDisplay } from "@/lib/units";
 import { liveDef, useLive } from "@/lib/store/live";
-import { useSettings } from "@/lib/store/settings";
+import { useUnits } from "@/lib/store/settings";
 
 export const useLiveValue = (id: string) => useLive((s) => s.values[id]);
 
 /** Latest value of a live item, converted to the user's units, with its converted display range. */
 export function useDisplay(id: string) {
   const v = useLiveValue(id);
-  const units = useSettings((s) => s.units);
+  const [units] = useUnits();
   const def = liveDef(id);
   const unit = def?.unit ?? "";
   const conv = (n: number) => toDisplay(n, unit, units).value;

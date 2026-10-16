@@ -1,6 +1,7 @@
 import { encodeDtc } from "../obd/dtc";
 import { hex2 } from "../obd/supported";
 import { engineAt, rng, type EngineState } from "./engine";
+import { garageAnswer } from "./garage";
 
 const clampByte = (n: number) => Math.max(0, Math.min(255, Math.round(n)));
 const word = (n: number) => {
@@ -130,6 +131,8 @@ export class Elm327Emulator {
   }
 
   private answer([mode, pid, frameNo]: number[]): number[] | null {
+    const extra = garageAnswer(mode!, pid);
+    if (extra) return extra;
     const e = engineAt(this.clock(), this.rand);
     switch (mode) {
       case 0x01:

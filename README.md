@@ -65,6 +65,8 @@ components/connect/  Connect screen, status, debug console, UUID settings
 
 Layers only depend downward (store → elm → transport, obd → elm types), and everything below `components/` is plain TypeScript tested with Vitest.
 
+Garage (car profiles, service log, reminders): see [docs/garage.md](docs/garage.md).
+
 ## [verify] list
 
 Things I couldn't confirm without the hardware or an authoritative source:
@@ -77,6 +79,9 @@ Things I couldn't confirm without the hardware or an authoritative source:
 - [ ] **Protocol**: which protocol your car reports via `ATDPN` (shown on the connect screen). The parsers assume header-less replies (`ATH0`) and handle CAN and legacy multi-line formats.
 - [ ] **Bluefy on iOS**: assumed to work like Chrome's Web Bluetooth. Untested.
 - [ ] **DTC descriptions** (phase 2): the generic SAE J2012 P0xxx table still needs a data source with a compatible licence. Until then every code shows "Manufacturer-specific / unknown"; descriptions are never guessed.
+- [ ] **Odometer PID 01A6** (Garage): which cars report it, and that the 0.1 km/bit decode (SAE J1979) matches. Many cars don't; the app falls back to manual entry.
+- [ ] **Garage VIN auto-select**: needs Mode 09 PID 02 on the real car; if the JF327/car doesn't answer, the user selects the car by hand.
+- [ ] **Garage due-soon windows**: 30 days / 1000 km are app defaults, not manufacturer intervals.
 
 ## Phase 2 / 3 (not built yet)
 

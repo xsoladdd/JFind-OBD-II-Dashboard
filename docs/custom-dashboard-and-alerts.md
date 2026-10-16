@@ -5,12 +5,14 @@
 The 6th dashboard theme lets you build your own layouts.
 
 - **Widgets**: dial gauge (`Gauge`), number, bar and sparkline (`Sparkline`). Each one can show any item the car supports (`useLive` `supported`), including `ATRV`. Values follow the units toggle (`useDisplay`).
-- **Warning zones**: these are the same zones Classic uses: RPM from the redline setting, coolant hot and fuel low from `lib/dashboard/zones.ts`. A widget turns red when its value is inside a zone.
+- **Warning zones**: these are the same zones Classic uses: RPM from the redline setting, coolant hot and fuel low from `lib/dashboard/zones.ts`. A widget takes the zone's colour and word when its value is inside a zone.
 - **Sizes**: 1×1, 2×1 and 2×2, on a grid that is 2 columns wide on phones and 4 from `md`. The size button cycles through them.
-- **Edit / view**:
-  - **Edit** shows the layout tools (New, Rename, Duplicate, Delete), "Add widget", and per-widget controls: type, size, ↑/↓ and ✕. The ↑/↓ buttons work on phones and from the keyboard. On desktop you can also drag widgets to reorder them.
-  - **Done** returns to view mode: just the widgets and the layout picker, for use in the car.
-- **Several named layouts**: switch between them with the picker.
+- **Edit / view** (driving rules in [DESIGN.md §12](../DESIGN.md#12-driving)):
+  - The layout picker and tools (New, Rename, Duplicate, Delete) and **Edit this layout** are in the dashboard Menu's "When parked" section.
+  - Editing shows "Add widget" and per-widget controls: type, size, ↑/↓ and ✕. The ↑/↓ buttons work on phones and from the keyboard. On desktop you can also drag widgets to reorder them. While the car moves the editing tools are locked ("Available when stopped") and the widgets stay readable.
+  - **Done** returns to view mode: just the widgets, for use in the car.
+- **Several named layouts**: switch between them with the picker in the Menu.
+- **Zones** show a word too ("High", "Low", "Redline"), not only a colour.
 - **Code**: `lib/dashboard/layouts.ts` holds the pure layout operations and their tests. `components/dashboard/themes/Custom.tsx` is the UI.
 - **Persisted** as `dashboard.customLayouts` through `useCustomLayouts()` in `lib/store/settings.ts`:
 

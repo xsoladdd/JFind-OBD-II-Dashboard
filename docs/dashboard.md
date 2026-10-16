@@ -1,6 +1,6 @@
 # Live dashboard (phase 3)
 
-`/dashboard` shows live engine data in five themes. This page documents the polling Scheduler and the live store, which are the stable API that later features (trips, performance timer, alerts, custom dashboard) build on.
+`/dashboard` is the full-screen drive view: live engine data in seven layouts, with everything else behind one **Menu** button (driving rules in [DESIGN.md §12](../DESIGN.md#12-driving)). This page documents the polling Scheduler and the live store, which are the stable API that later features (trips, performance timer, alerts, custom dashboard) build on.
 
 ## Live data API
 
@@ -65,9 +65,13 @@ Each persisted setting has its own hook in `lib/store/settings.ts`, which return
 | Hook | Key | Default |
 | --- | --- | --- |
 | `useUnits()` (plain TS: `getUnits()`) | `units` | `"metric"` |
-| `useTheme()` | `dashboard.theme` | `"classic"` |
+| `useTheme()` | `dashboard.theme` | `"drive"` |
 | `useRedline()` | `dashboard.redlineRpm` | `6500` |
 | `useHudMirror()` | `dashboard.hudMirror` | `false` |
+| `useNightDim()` | `display.nightDim` | `false` |
+| `useDriveExtras()` | `dashboard.driveExtras` | `["0105", "012F"]` (at most 2) |
+| `useOpenAfterConnect()` | `drive.openAfterConnect` | `false` (set by Start driving) |
+| `useLastAdapter()` / `setLastAdapter()` | `ble.lastAdapter` | none (`{ id, name }` of the last Bluetooth adapter) |
 | `useCustomLayouts()` | `dashboard.customLayouts` | `{ active: "", layouts: [] }` |
 | `useAlertRules()` | `alerts.rules` | `[]` |
 
@@ -91,18 +95,31 @@ This covers km/h, km, °C, kPa, L, L/h and L/100km (to US mpg, US gallons). Unit
 
 | Theme | What it shows |
 | --- | --- |
-| Classic | Needle gauges for RPM (red zone from the redline setting), speed, coolant (hot zone) and fuel (low zone). |
+| Drive (default) | Speed as the hero number, RPM as a full-width bar with the redline marked ("Redline" appears past it), and up to 2 values picked in the Menu (default coolant and fuel). Landscape puts speed on the left. |
+| Classic | Needle gauges for RPM (red zone from the redline setting), speed, coolant (hot zone) and fuel (low zone). RPM and speed full width in portrait, one row in landscape. |
 | Sport | Big tach with the speed in the middle, a shift-light bar (lights from 75 % of the redline, flashes at it), and coolant, throttle and fuel below. |
 | Minimal | A card for every polled value, with a 60 s sparkline. |
-| Engineer | A table of every polled PID with live, min, max and avg. A chart of up to 4 ticked PIDs, each drawn as a % of its own display range so they share one axis, with a hover tooltip showing real values. **Record** saves the session as CSV (`time_iso,elapsed_s,pid,name,value,unit`, raw metric units). |
-| HUD | Huge speed, an RPM bar and coolant. **Mirror** flips it for windshield reflection. **Full screen** uses the Fullscreen API, and falls back to a full-window overlay where that's missing (iPhone). |
-| Custom | Your own layouts of dial, number, bar and sparkline widgets. See [custom-dashboard-and-alerts.md](custom-dashboard-and-alerts.md). |
+| Engineer (parked only) | A table of every polled PID with live, min, max and avg. A chart of up to 4 ticked PIDs, each drawn as a % of its own display range so they share one axis, with a hover tooltip showing real values. **Record** saves the session as CSV (`time_iso,elapsed_s,pid,name,value,unit`, raw metric units). |
+| HUD | Huge speed, an RPM bar and coolant on pure black. **Mirror HUD** (Menu) flips it for windshield reflection. |
+| Custom | Your own layouts of dial, number, bar and sparkline widgets. View mode works while moving; picking, creating and editing layouts is in the Menu's "When parked" section, and the in-grid editing tools lock while moving. See [custom-dashboard-and-alerts.md](custom-dashboard-and-alerts.md). |
 
-Warning thresholds are in `lib/dashboard/zones.ts`. They are general guidance, not from a standard: coolant hot at ≥ 110 °C and fuel low at ≤ 12 %. Redline is a per-car setting (default 6500 rpm, a placeholder).
+Every theme draws its zones from `zonesFor()` in `components/dashboard/live.ts`, and pairs the colour with a word ("High", "Low", "Redline"). Warning thresholds are in `lib/dashboard/zones.ts`. They are general guidance, not from a standard: coolant hot at ≥ 110 °C and fuel low at ≤ 12 %. Redline is a per-car setting (default 6500 rpm, a placeholder).
+
+## Drive view
+
+- **Shell**: the header, sidebar and tab bar are hidden on this page (the `drive:` CSS variant on `#drive-view`), but stay mounted, so alerts and trip recording keep running.
+- **Menu** (one 72px button, bottom right; right edge in landscape) opens a sheet (`components/dashboard/DriveSettings.tsx`):
+  - **Display**: layout, units, night dim, full screen, HUD mirror (HUD only), Hold parked (Demo only), and the screen-on and reads-per-second status.
+  - **Go to**: every other page.
+  - **When parked** (`StoppedOnly`): redline, the Drive layout's 2 values, and Custom layout management.
+- **Alerts** (`components/dashboard/DriveBanners.tsx`): while a rule fires and alerts aren't muted, a full-width danger banner over the gauges shows the value at firing, its unit and "High"/"Low", with one 72px **Mute 5 min** (acknowledges and mutes, using the first of `MUTE_MINUTES`). Alert toasts are dismissed while it shows. The engine in `lib/alerts` and the shell's `AlertIndicator` are unchanged.
+- **Connection**: nothing while it's fine. **Reconnecting** is a full-width warn banner with the gauges dimmed. Not connected or **Connection lost** replaces the gauges with the word and one big **Reconnect to <adapter>** (via `navigator.bluetooth.getDevices()`, feature-detected; README [verify]) or **Connect**, plus Demo mode. Connecting always starts from a tap.
+- **Hold parked** (Demo): `lib/sim/park.ts` pins the simulated car at 0 km/h and idle, so the stopped (unlocked) state can be shown on demand.
 
 ## Screen and install
 
-- **Wake Lock**: the dashboard keeps the screen on while it's open. This is feature-detected, re-acquired when the tab becomes visible again, and shown as "☀ screen on".
+- **Wake Lock**: the dashboard keeps the screen on while it's open. This is feature-detected, re-acquired when the tab becomes visible again, and reported in the Menu ("Screen kept on").
+- **Full screen**: a Menu switch, shown only where the Fullscreen API exists (not iPhone Safari, where the drive view already fills the window). Leaving the dashboard exits it.
 - **PWA**: `app/manifest.ts` (starts at `/dashboard`), icons in `public/icons/` (SVG source plus PNGs), and `public/sw.js`. The service worker is network-first with a cache fallback for same-origin GETs, so the installed app opens without signal. It is registered in production builds only.
 
 Screenshots are in `docs/screenshots/dashboard/`.

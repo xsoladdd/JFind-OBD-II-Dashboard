@@ -12,27 +12,37 @@ export function nextIndex(i: number, key: string, n: number): number | null {
   return null;
 }
 
-/** Pick one of a few options (theme, units, period). Arrow keys move and select, like native radios. */
+/**
+ * Pick one of a few options (theme, units, period). Arrow keys move and select, like native radios. `size="drive"`
+ * wraps into a grid of 72px choices for the drive view (DESIGN.md "Driving") instead of scrolling sideways.
+ */
 export function SegmentedControl<T extends string>({
   label,
   options,
   value,
   onChange,
+  size = "md",
   className,
 }: {
   label: string;
   options: { value: T; label: ReactNode }[];
   value: T;
   onChange: (v: T) => void;
+  size?: "md" | "drive";
   className?: string;
 }) {
+  const drive = size === "drive";
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const selected = options.findIndex((o) => o.value === value);
   return (
     <div
       role="radiogroup"
       aria-label={label}
-      className={cx("flex max-w-full overflow-x-auto rounded-control border border-line bg-surface-1 p-1", className)}
+      className={cx(
+        "max-w-full rounded-control border border-line bg-surface-1 p-1",
+        drive ? "grid grid-cols-[repeat(auto-fill,minmax(6.5rem,1fr))] gap-1" : "flex overflow-x-auto",
+        className,
+      )}
     >
       {options.map((o, i) => {
         const on = i === selected;
@@ -55,7 +65,8 @@ export function SegmentedControl<T extends string>({
               refs.current[n]?.focus();
             }}
             className={cx(
-              "flex min-h-11 shrink-0 items-center rounded-[6px] px-4 text-sm font-semibold transition-colors duration-150",
+              "flex shrink-0 items-center rounded-[6px] px-4 font-semibold transition-colors duration-150",
+              drive ? "min-h-18 justify-center text-lg" : "min-h-11 text-sm",
               on ? "bg-surface-3 text-fg" : "text-fg-faint hover:text-fg",
             )}
           >

@@ -3,6 +3,8 @@
 The source of truth for how OBD Dash looks. Tokens live in `app/globals.css`, components in `components/ui/` (usage in
 [`docs/ui-kit.md`](docs/ui-kit.md)). Change this file first, then the code.
 
+For anything used while the car moves, **§12 Driving** comes first.
+
 Chosen from three coded directions (screenshots in `docs/screenshots/redesign/directions/`). The user picked
 **Cluster** and asked that it work in **portrait and landscape**, with **everything easy to reach**.
 
@@ -63,8 +65,8 @@ restyled already look close. Remove the block once nothing uses `zinc-*` or `sky
   - Wordmark: `OBD DASH`, uppercase, extrabold, 75% width.
 - **Geist Mono** (`font-mono`) only for raw protocol text: AT commands, hex, UUIDs, the debug log.
 - Sentence case everywhere (headings and buttons). No em or en dashes in UI copy; use a comma, colon or hyphen.
-- Missing value: `--` (`NO_VALUE` from the kit), like a car display. The old `fmt()` in
-  `components/dashboard/live.ts` returns an em dash; switch it to `NO_VALUE` when you restyle the dashboard.
+- Missing value: `--` (`NO_VALUE` from the kit), like a car display. `fmt()` in `components/dashboard/live.ts`
+  returns it too.
 
 ## 4. Space, radius, elevation
 
@@ -80,7 +82,8 @@ restyled already look close. Remove the block once nothing uses `zinc-*` or `sky
 ## 5. Components and states
 
 All in `components/ui/`, documented in `docs/ui-kit.md`. Every interactive element is at least 44px tall
-(`min-h-11`); in-car primary actions are 48px (`min-h-12`).
+(`min-h-11`); in-car primary actions are 48px (`min-h-12`). Anything a driver may tap while moving is 72px
+(`size="drive"`, see §12).
 
 | State | Treatment |
 | --- | --- |
@@ -118,8 +121,8 @@ Phone first. Three layouts, switched in CSS only:
   span the width (`grid gap-2 sm:grid-cols-2`). Never put a primary action only in the header.
 - Respect safe areas: header and rail pad `env(safe-area-inset-left/right)`, bars pad `env(safe-area-inset-bottom)`.
 - `html` has `scroll-padding-block: 4.5rem` so the sticky header and tab bar never hide a focused element.
-- Dashboard landscape: everything must fit 844x390 without scrolling. Classic shows its 4 gauges in one row
-  (`short:grid-cols-4`) and the theme toolbar shrinks to one line.
+- Dashboard landscape: everything must fit 844x390 without scrolling. The dashboard is the full-screen drive view
+  (§12): Classic shows its 4 gauges in one row (`short:grid-cols-4`), Drive puts speed on the left.
 
 ## 7. Motion
 
@@ -144,12 +147,23 @@ Thresholds come from `lib/dashboard/zones.ts` and settings. They are general gui
 
 - Gauge parts: track `var(--surface-2)`, ticks `var(--line-strong)` (labelled ticks `var(--fg-muted)`), value text
   `var(--fg)` in `num`, unit `var(--fg-faint)`, zone `var(--danger)`/`var(--warn)`. SVG takes `stroke="var(--danger)"`
-  directly. Replace the hex literals in `components/dashboard/Gauge.tsx` and the `RED`/`AMBER` constants in the themes.
+  directly. Zones come from `zonesFor()` in `components/dashboard/live.ts`, each with its tone and word.
 - Draw a zone as a thin ring outside the track so the value arc never hides it (direction mockups show this).
 - In a zone: the value text turns the zone colour **and** a word appears ("High", "Low"). Colour alone is not enough.
-- Charts: gridlines `var(--line)`, axis labels `var(--fg-faint)` 13px `num`. Series colours (`SERIES` in
-  `components/dashboard/live.ts`) must avoid the warn and danger hues. Proposal to validate with the `dataviz` skill:
-  lime `var(--accent)`, ice `oklch(0.78 0.11 230)`, orchid `oklch(0.74 0.14 320)`, `var(--fg-muted)`.
+- Charts: gridlines `var(--line)`, axis labels `var(--fg-faint)` 13px `num`. Series colours are the tokens
+  `--series-1..4` (`SERIES` in `components/dashboard/live.ts`), in this fixed order, clear of the warn and danger hues:
+
+  | Token | Value | |
+  | --- | --- | --- |
+  | `--series-1` | `oklch(0.665 0.15 125)` `#7fa32a` | lime |
+  | `--series-2` | `oklch(0.665 0.12 225)` `#1ea2cb` | cyan |
+  | `--series-3` | `oklch(0.56 0.18 270)` `#4d68dc` | blue |
+  | `--series-4` | `oklch(0.56 0.15 325)` `#9f51a4` | purple |
+
+  Checked with the `dataviz` skill's validator (`--mode dark --pairs all`) on `--surface-1` and on the night-dim
+  surface: all checks pass (worst colour-blind pair ΔE 9.3, normal-vision floor 15.5, all at least 3:1). The earlier
+  proposal (accent lime, ice, orchid, `fg-muted`) failed it: too light, a grey slot, and ice and orchid merge for
+  deuteranopes. Series are always named in a legend as well.
 
 ## 9. Do and don't
 
@@ -192,6 +206,8 @@ Don't:
    (and the re-exports in `components/trips/ui.tsx`) now point at the kit; import from `@/components/ui` instead.
    When no page imports them, delete them and the transition `@theme` block in `app/globals.css`.
 5. Add the landscape layout with `short:`. Don't change behaviour or data logic.
+   Apply §12 "Restructure, don't just recolour": put the driving-relevant item first, move secondary things behind a
+   button or a sheet, and wrap typing and careful reading in `StoppedOnly`.
 6. Run the `web-design-guidelines` audit on the files you touched; fix it or log an exception below.
 7. Screenshots in Demo mode with `playwright-cli`: 390x844, 844x390 and 1280x800, into `docs/screenshots/<area>/`.
 
@@ -209,3 +225,141 @@ From the `web-design-guidelines` audit of the shell, connect screen, folder card
 - **Header chip on phones** hides the protocol name below 640px; the Connect screen shows it in full.
 - **Skip link** jumps to the page content (`#content`), not to each page's `<main>`.
 - **Sheet backdrop** uses `bg-black/70` (pure black at 70%), the one place black is used.
+
+From JOID-0016 (driving):
+
+- **HUD background is pure black** (`bg-black`): on a windshield reflection black shows nothing, so only the values
+  appear. It's the HUD theme only.
+- **Engineer table checkboxes** are 20px inside dense rows. Engineer is parking-only (`StoppedOnly`), so this never
+  applies while moving.
+- **Sheet "Close" is 44px**, not 72px, in the drive view's Menu: tapping the backdrop or pressing Escape also closes
+  it, and closing can't change anything.
+- **Theme and units in the Menu sheet are one tap** once the sheet is open: opening the sheet is the deliberate first
+  step (§12 rule 5).
+
+## 12. Driving
+
+OBD Dash is mostly used on a phone in a mount at arm's length, in portrait or landscape. Where a screen can be used
+while the car moves, the rules here come first, before the rest of this file. The user's brief: "The colours look
+good, but this is hard to use when you're driving."
+
+### Principles
+
+1. **Glance, don't read.** The usual reference is NHTSA's *Visual-Manual Driver Distraction Guidelines for In-Vehicle
+   Electronic Devices*: single glances of about 2 s or less, and about 12 s or less of total eyes-off-road time per
+   task [verify]. It is written for built-in car systems; here it is a design target, not a compliance claim.
+   - Huge numbers, one word for state ("High", "Low", "Redline", "Reconnecting"), no paragraphs.
+   - No small labels in the drive view: labels are 18px (`text-lg`) or more, one or two words (`shortName()`).
+2. **Few, huge targets.** Drive-context targets are at least **72px** (`min-h-18`) with at least **16px** (`gap-4`)
+   between them, so a bump doesn't hit the wrong one. These are app choices, not from a standard. Use
+   `Button size="drive"`, `buttonClass(variant, "drive")` and `SegmentedControl size="drive"`; give a `Switch` that
+   is used while moving `className="min-h-18"`. 44px stays the floor everywhere else.
+3. **Nothing to type while moving.** Typing and careful reading are for when the car is stopped: wrap them in
+   `StoppedOnly`.
+4. **Zero setup in the car.** From opening the app to values on screen is one tap: the PWA opens on `/dashboard`,
+   and its not-connected screen has one big **Reconnect to <adapter>** (no chooser, where the browser allows it) or
+   **Connect** button. "Start driving" on the connect screen opens the drive view and makes later connects land there.
+5. **No accidental exits or changes.** A mode change or an exit in the drive view takes two deliberate steps (open the
+   Menu sheet, then choose) or a confirmation. Anything destructive asks for confirmation. Never a single stray tap.
+
+### Moving or stopped: `useDriving` and `StoppedOnly`
+
+- `useDriving()` (`lib/drive/driving.ts`) is true while connected and the last live vehicle speed (`010D`) is above
+  0. The pure `isDriving(status, speedKmh)` is the testable part. There is no staleness timeout: a polling pause (an
+  ECU test, a scan) must not unlock a form mid-drive.
+- `StoppedOnly` (`components/ui`, see `docs/ui-kit.md`) swaps its children for a large "Available when stopped"
+  panel while driving. The children stay mounted (hidden and inert), so a half-typed form survives rolling forward at
+  the lights. It also keeps `010D` polled while it is on screen. Give it a `label` that names what is locked.
+- **Lock:** anything that needs typing (forms, editors, name prompts), careful reading (tables, logs, raw protocol
+  text, long explanations) or a multi-step operation (tests, setup).
+- **Keep:** read-only glanceable values, the page's one big action, navigation.
+- Safety interlocks in the logic stay: clearing codes is refused while RPM > 0 (`lib/diagnostics/scan.ts`).
+- Demo mode: the simulator moves 10 to 50 s of every 60 s cycle. **Hold parked** in the dashboard Menu (Demo only,
+  `lib/sim/park.ts`) pins it at a standstill.
+
+### Restructure, don't just recolour
+
+Restyling a page for driving means changing what is on it and in what order, not only its colours. For each page,
+in this order:
+
+1. **What goes first.** Name the one thing a driver needs from this page: a number, a status word, or one action.
+   It is the first thing in the first column, at the top: a `Stat` at `lg`/`xl`, a word in a `Badge` or heading, or
+   one `size="drive"` primary button. Nothing above it but the page title.
+2. **What moves behind a button or a sheet.** Settings, filters, pickers, import/export, secondary actions,
+   explanations and help text, and long lists past the first few items. Rarely used sections go in a `Disclosure`
+   (stays on the page); a short task goes in a `Sheet` opened by one labelled button. One sheet per job, not a menu
+   of menus.
+3. **What is locked or removed while driving.** Everything in the "Lock" list above goes in `StoppedOnly`. Text
+   that only explains stays for parked use, below the primary content. Decoration that adds nothing goes.
+
+Checklist per page:
+
+- [ ] The first item is the one driving-relevant thing, big, at the top of column one.
+- [ ] Every control a driver might use while moving is `size="drive"` with `gap-4` around it.
+- [ ] Every form, editor, table, log and multi-step tool is inside `StoppedOnly` with a `label`.
+- [ ] Secondary actions and settings are behind one button (a `Sheet`) or in a `Disclosure`.
+- [ ] Destructive and mode-changing actions need a confirmation or a second step.
+- [ ] State is a word plus a colour, never colour alone.
+- [ ] It works at 390x844, 844x390 (`short:`) and 1280x800, with the Demo car moving and held parked.
+
+Starting points for the pages still to restyle. These are suggestions to confirm with the user, not requirements:
+
+| Page | Goes first | Behind a button or sheet | Locked while driving (already done) |
+| --- | --- | --- | --- |
+| Diagnostics | Code count as a word ("No codes", "2 codes") and Scan | Export, report, readiness detail, code history | Code details, the clear dialog (also RPM-blocked) |
+| Trips | The current trip (time, distance) and the performance timer's state | Trip settings, replay, dyno inputs | (none yet; lock trip edits and dyno setup) |
+| Garage | The active car and its next due reminder | Car switcher, backup and import | Car, service and reminder forms (done) |
+| ECU | Adapter voltage | Per-ECU details, info | Mode 06 table, battery test (done) |
+| Alerts | Firing alerts with Mute | Examples, rule list | Rule editor (done) |
+| History, PIDs | Parking-only pages: no driving-first item | | Log viewer, PID editor and list (done) |
+
+**Worked example: the Dashboard.**
+1. First: the gauges, and nothing else. In the Drive layout that is speed as the hero, RPM as a full-width bar
+   with the redline marked, and up to 2 values the user picks.
+2. Behind one **Menu** button (72px, bottom right; on the right edge in landscape), in one `Sheet`: the layout picker,
+   units, night dim, full screen, HUD mirror, Demo hold parked, the screen-on and reads-per-second status, and links to
+   every page.
+3. Locked: the redline input, the Drive value pickers and Custom layout editing (the sheet's "When parked" section),
+   plus the Engineer table.
+4. Trouble gets big: a firing alert is a full-width danger banner over the gauges (name, value, "High"/"Low") with
+   one 72px Mute; "Reconnecting" is a full-width warn banner with the gauges dimmed; a lost link replaces the gauges
+   with "Connection lost" and one big Reconnect. When the link is fine, nothing is shown.
+
+### The drive view
+
+- `/dashboard` renders `<main id="drive-view">`. The `drive:` variant (`app/globals.css`, `body:has(#drive-view)`
+  while it isn't hidden) hides the shell's header, sidebar and tab bar at every width. They stay mounted, so the alert
+  engine and the trip watcher keep running. With `cacheComponents`, a page you navigate away from stays in the DOM
+  with an inline `display: none !important`; the variant ignores a drive view hidden that way. Don't reuse the id.
+- The view fills the window (`fixed inset-0`) and pads every edge with `max(1rem, env(safe-area-inset-*))`.
+- Layouts: Drive (default for new installs), Classic, Sport, HUD, Minimal and Custom (view mode) work while moving.
+  Engineer and Custom editing are parking-only.
+- The screen stays on (Wake Lock) while the dashboard is open. Full screen is a switch in the Menu where the
+  Fullscreen API exists.
+
+### Driving tab bar
+
+While `useDriving()` is true, the phone tab bar (portrait) and rail (landscape) show only **Dashboard**, **Trips**
+and **More**, at 72px, with 18px labels; More lists every other page. The desktop sidebar doesn't change. The list is
+`DRIVE_TABS` in `components/shell/NavLinks.tsx`. Tabs stay text-only: no icon package is installed (adding
+`@phosphor-icons/react` needs the user's approval).
+
+### Night dim
+
+**Night dim** in the Menu (setting `display.nightDim`) sets `data-dim` on `<html>`: the same palette at lower
+luminance, app-wide (`:root[data-dim]` in `app/globals.css`). Body text drops from about 88% to about 51% relative
+luminance. Contrast on the dim `--surface-1`:
+
+| Token | Day | Dim | Dim contrast |
+| --- | --- | --- | --- |
+| `--fg` | `oklch(0.96 0.005 80)` | `oklch(0.8 0.005 80)` | 10.3:1 |
+| `--fg-muted` | `oklch(0.78 0.01 75)` | `oklch(0.68 0.008 75)` | 6.7:1 |
+| `--fg-faint` | `oklch(0.66 0.012 75)` | `oklch(0.58 0.01 75)` | 4.5:1 |
+| `--accent` | `oklch(0.89 0.19 122)` | `oklch(0.74 0.15 122)` | 8.6:1 (`--on-accent` on it 8.7:1) |
+| `--warn` | `oklch(0.82 0.15 75)` | `oklch(0.7 0.12 75)` | 7.1:1 |
+| `--danger` | `oklch(0.7 0.19 27)` | `oklch(0.6 0.16 27)` | 4.5:1 (`--on-danger` on it 4.7:1) |
+| `--danger-fg` | `oklch(0.78 0.13 27)` | `oklch(0.68 0.11 27)` | 6.4:1 |
+| `--line-strong` | `oklch(0.5 0.01 70)` | `oklch(0.49 0.01 70)` | 3.1:1 |
+
+Surfaces also step down (`--bg` 0.13, `--surface-1` 0.165, `--surface-2` 0.205, `--surface-3` 0.24, `--line` 0.27).
+The chart series tokens pass on the dim surface unchanged.

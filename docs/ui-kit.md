@@ -24,7 +24,8 @@ Every interactive part is at least 44px tall, shows the global focus ring, and w
 <Link href="/history" className={linkClass}>History</Link>
 ```
 
-- Variants: `primary` (one per view), `secondary`, `ghost`, `danger`. Sizes: `md` (48px, default), `sm` (44px).
+- Variants: `primary` (one per view), `secondary`, `ghost`, `danger`. Sizes: `md` (48px, default), `sm` (44px),
+  `drive` (72px, for anything a driver may tap while moving: DESIGN.md §12).
 - `type` defaults to `"button"`. Inside a form, pass `type="submit"` to the submit button.
 - `loading` disables the button, sets `aria-busy` and adds a trailing "…".
 - `IconButton` requires `label`: it becomes `aria-label` and the tooltip.
@@ -90,7 +91,7 @@ Tones: `neutral`, `accent`, `ok`, `warn`, `danger`, `count` (solid danger, for n
 ```
 
 A radio group: one tab stop, arrow keys and Home/End move and select (`nextIndex`). Scrolls sideways when it
-doesn't fit.
+doesn't fit. `size="drive"` wraps into a grid of 72px choices instead (the dashboard Menu's layout and units).
 
 ## Sheet
 
@@ -131,6 +132,20 @@ Big tabular number (`num` utility) with unit and label. `null`, `undefined` or `
 
 Tones `info` (default), `warn`, `danger`. Add `role="alert"` only for something that just went wrong, `role="status"`
 for a live hint.
+
+## StoppedOnly, StoppedOnlyView
+
+```tsx
+<StoppedOnly label="Car details">
+  <ProfileForm … />
+</StoppedOnly>
+```
+
+For anything that needs typing or careful reading (DESIGN.md §12). While the car moves (`useDriving()` from
+`lib/drive/driving.ts`: connected and live speed above 0) it shows a large "Available when stopped" panel with the
+`label`; when stopped it renders the children normally. The children stay mounted while hidden (`hidden` + `inert`), so
+a half-typed form isn't lost. It keeps the vehicle speed polled while on screen. `StoppedOnlyView({ driving })` is the
+pure part, for tests. Optional `className` goes on the lock panel (for margins).
 
 ## cx
 

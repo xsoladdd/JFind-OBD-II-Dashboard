@@ -7,6 +7,7 @@ import { FolderCard } from "@/components/storage/FolderCard";
 import { useFolder } from "@/lib/storage/folder";
 import { useGarage } from "@/lib/store/garage";
 import { useConnection } from "@/lib/store/connection";
+import { StoppedOnly } from "@/components/ui";
 import { Backup } from "./Backup";
 import { ProfileForm } from "./ProfileForm";
 import { Reminders } from "./Reminders";
@@ -138,7 +139,9 @@ export function GaragePage() {
       {!loaded ? null : form ? (
         <section className={card}>
           <h2 className="mb-3 font-semibold">{form.initial?.id ? "Edit car" : "New car"}</h2>
-          <ProfileForm key={form.initial?.id ?? "new"} initial={form.initial} onDone={() => setForm(null)} />
+          <StoppedOnly label="Car details">
+            <ProfileForm key={form.initial?.id ?? "new"} initial={form.initial} onDone={() => setForm(null)} />
+          </StoppedOnly>
         </section>
       ) : (
         <>

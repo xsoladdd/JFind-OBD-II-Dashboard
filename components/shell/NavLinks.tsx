@@ -5,15 +5,19 @@ import { usePathname } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import { GarageNavBadge } from "@/components/garage/GarageNavBadge";
 import { cx, Sheet } from "@/components/ui";
+import { useDriving } from "@/lib/drive/driving";
 import { NAV, splitNav } from "@/lib/nav";
 
 /** Optional per-route badges beside a nav label (lib/nav.ts entries carry no badge field). */
 const BADGES: Record<string, ComponentType> = { "/garage": GarageNavBadge };
 
+/** Phone tabs while moving (DESIGN.md "Driving"): only what helps on the road, with bigger targets. */
+const DRIVE_TABS = ["/dashboard", "/trips"];
+
 const isActive = (path: string, href: string) => (href === "/" ? path === "/" : path === href || path.startsWith(`${href}/`));
 
 /** Phone tab: a bar along the top edge in portrait, along the left edge in the landscape rail. */
-const TAB = "relative flex min-h-14 w-full items-center justify-center truncate px-1 text-center text-[13px] font-semibold transition-colors duration-150 active:bg-surface-1";
+const TAB = "relative flex min-h-14 w-full items-center justify-center truncate px-1 text-center font-semibold transition-colors duration-150 active:bg-surface-1";
 const tabTone = (active: boolean) => (active ? "text-fg" : "text-fg-faint hover:text-fg-muted");
 const Indicator = () => (
   <span
@@ -52,9 +56,13 @@ export function NavLinks({ variant }: { variant: "tabs" | "side" }) {
 }
 
 function Tabs({ path }: { path: string }) {
-  const { primary, more } = splitNav();
+  const driving = useDriving();
+  const { primary, more } = driving
+    ? { primary: NAV.filter((n) => DRIVE_TABS.includes(n.href)), more: NAV.filter((n) => !DRIVE_TABS.includes(n.href)) }
+    : splitNav();
   const moreActive = more.some((n) => isActive(path, n.href));
   const [open, setOpen] = useState(false);
+  const tab = cx(TAB, driving ? "min-h-18 text-lg short:text-base" : "text-[13px]");
 
   return (
     <>
@@ -64,7 +72,7 @@ function Tabs({ path }: { path: string }) {
           const Badge = BADGES[n.href];
           return (
             <li key={n.href} className="relative min-w-0 flex-1">
-              <Link href={n.href} aria-current={active ? "page" : undefined} className={cx(TAB, tabTone(active))}>
+              <Link href={n.href} aria-current={active ? "page" : undefined} className={cx(tab, tabTone(active))}>
                 {active && <Indicator />}
                 {n.label}
               </Link>
@@ -84,7 +92,7 @@ function Tabs({ path }: { path: string }) {
               aria-haspopup="dialog"
               aria-expanded={open}
               onClick={() => setOpen(true)}
-              className={cx(TAB, tabTone(moreActive))}
+              className={cx(tab, tabTone(moreActive))}
             >
               {moreActive && <Indicator />}
               More

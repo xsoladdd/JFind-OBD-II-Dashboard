@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useOpenAfterConnect } from "@/lib/store/settings";
 import { Badge, Button, buttonClass, InlineNote, NO_VALUE, panelClass, Stat, type Tone } from "@/components/ui";
 import { describeProtocol } from "@/lib/elm/protocols";
 import { useConnection, type ConnStatus } from "@/lib/store/connection";
@@ -15,6 +16,7 @@ const TONE: Record<ConnStatus, Tone> = {
 
 export function StatusCard() {
   const s = useConnection();
+  const [, setOpenAfter] = useOpenAfterConnect();
   if (s.status === "idle" && !s.error) return null;
   const proto = s.protocol ? describeProtocol(s.protocol) : null;
   const active = s.status !== "idle" && s.status !== "error";
@@ -64,13 +66,16 @@ export function StatusCard() {
       </dl>
 
       {active && (
-        <div className="mt-5 grid grid-cols-2 gap-2 sm:flex">
+        <div className="mt-5 grid gap-3">
           {s.status === "connected" && (
-            <Link href="/dashboard" className={buttonClass("primary")}>
-              Open dashboard
+            // The drive view, and the place a later connect returns to (useOpenAfterConnect).
+            <Link href="/dashboard" onClick={() => setOpenAfter(true)} className={buttonClass("primary", "drive")}>
+              Start driving
             </Link>
           )}
-          <Button onClick={() => void s.disconnect()}>Disconnect</Button>
+          <Button onClick={() => void s.disconnect()} className="sm:justify-self-start">
+            Disconnect
+          </Button>
         </div>
       )}
     </section>

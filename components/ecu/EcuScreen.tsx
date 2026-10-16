@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { StoppedOnly } from "@/components/ui";
 import { useConnection } from "@/lib/store/connection";
 import { BatteryCard } from "./BatteryCard";
 import { InfoCard } from "./InfoCard";
@@ -42,10 +43,14 @@ export function EcuScreen() {
         </section>
       ) : (
         <>
-          <Mode06Card />
+          <StoppedOnly label="Mode 06 monitor tests">
+            <Mode06Card />
+          </StoppedOnly>
           <PerEcuCard />
           <InfoCard />
-          <BatteryCard />
+          <StoppedOnly label="Battery and charging test">
+            <BatteryCard />
+          </StoppedOnly>
         </>
       )}
     </main>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { currentOdometer, reminderStatus, todayIso, type CarProfile, type Reminder, type ReminderStatus } from "@/lib/garage/model";
 import { useGarage } from "@/lib/store/garage";
+import { StoppedOnly } from "@/components/ui";
 import { btn, btnPrimary, card, Field, input, num } from "./ui";
 
 const PILL: Record<ReminderStatus, string> = {
@@ -76,7 +77,11 @@ export function Reminders({ car }: { car: CarProfile }) {
           </button>
         )}
       </div>
-      {editing && <ReminderForm key={editing.id} car={car} initial={editing} onDone={() => setEditing(null)} />}
+      {editing && (
+        <StoppedOnly label="Reminder" className="mt-3">
+          <ReminderForm key={editing.id} car={car} initial={editing} onDone={() => setEditing(null)} />
+        </StoppedOnly>
+      )}
       {rows.length === 0 && !editing && <p className="mt-3 text-sm text-zinc-400">No reminders. They show here and as a badge on Garage. Nothing leaves this device.</p>}
       <ul className="mt-3 divide-y divide-zinc-800">
         {rows.map(({ r, status }) => (

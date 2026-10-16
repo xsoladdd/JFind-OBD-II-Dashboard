@@ -2,26 +2,24 @@
 
 import { useLive } from "@/lib/store/live";
 import { Sparkline } from "../Sparkline";
-import { fmt, useDisplay } from "../live";
+import { Readout } from "../Readout";
+import { useLiveValue } from "../live";
 
 function Card({ id }: { id: string }) {
-  const d = useDisplay(id);
+  const live = useLiveValue(id);
   return (
-    <div className="rounded-xl bg-zinc-900/70 p-3">
-      <div className="truncate text-xs text-zinc-500">{d.name}</div>
-      <div className="mt-1 font-mono text-2xl font-semibold tabular-nums text-zinc-50">
-        {fmt(d.value, d.unit)}
-        <span className="ml-1 text-xs font-normal text-zinc-500">{d.unit}</span>
-      </div>
-      <Sparkline points={d.live?.history ?? []} />
+    <div className="rounded-panel border border-line bg-surface-1 p-4">
+      <Readout id={id} valueClass="text-4xl" />
+      <Sparkline points={live?.history ?? []} />
     </div>
   );
 }
 
+/** A card for every polled value with a 60 s trend. Scrolls when the car reports many PIDs. */
 export function Minimal() {
   const supported = useLive((s) => s.supported);
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+    <div className="grid h-full auto-rows-min grid-cols-2 gap-3 overflow-y-auto overscroll-contain lg:grid-cols-4 short:grid-cols-3">
       {supported.map((id) => (
         <Card key={id} id={id} />
       ))}

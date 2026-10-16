@@ -9,6 +9,7 @@ import type { Tier } from "@/lib/polling/Scheduler";
 import { withPollingPaused } from "@/lib/polling/pause";
 import { getClient, useConnection } from "@/lib/store/connection";
 import { useCustomPids } from "@/lib/store/settings";
+import { StoppedOnly } from "@/components/ui";
 import { useMounted } from "../connect/hooks";
 
 const card = "rounded-xl border border-zinc-800 bg-zinc-900 p-4";
@@ -213,52 +214,58 @@ export function PidsPage() {
       </div>
       {note && <p className="text-sm text-zinc-300" role="status">{note}</p>}
 
-      {draft && <PidForm key={draft.id} draft={draft} onDone={() => setDraft(null)} />}
+      {draft && (
+        <StoppedOnly label="The custom PID editor">
+          <PidForm key={draft.id} draft={draft} onDone={() => setDraft(null)} />
+        </StoppedOnly>
+      )}
 
-      <section className={card}>
-        <h2 className="font-semibold">Custom PIDs</h2>
-        {!pids.length ? (
-          <p className="mt-2 text-sm text-zinc-400">None yet. Add one, import a list, or try the example below in Demo mode.</p>
-        ) : (
-          <ul className="mt-2 divide-y divide-zinc-800">
-            {pids.map((p) => (
-              <li key={p.id} className="py-3">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                  <label className="flex w-full min-w-0 items-center gap-3 sm:w-auto sm:flex-1">
-                    <input
-                      type="checkbox"
-                      checked={p.enabled}
-                      onChange={(e) => save(list.map((x) => (x.id === p.id ? { ...x, enabled: e.currentTarget.checked } : x)))}
-                      className="h-5 w-5 shrink-0"
-                      aria-label={`Poll ${p.name}`}
-                    />
-                    <span className="min-w-0">
-                      <span className={`block ${p.enabled ? "" : "text-zinc-500"}`}>
-                        {p.name} {p.unit && <span className="text-zinc-500">({p.unit})</span>}
+      <StoppedOnly label="The custom PID list and Test once">
+        <section className={card}>
+          <h2 className="font-semibold">Custom PIDs</h2>
+          {!pids.length ? (
+            <p className="mt-2 text-sm text-zinc-400">None yet. Add one, import a list, or try the example below in Demo mode.</p>
+          ) : (
+            <ul className="mt-2 divide-y divide-zinc-800">
+              {pids.map((p) => (
+                <li key={p.id} className="py-3">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <label className="flex w-full min-w-0 items-center gap-3 sm:w-auto sm:flex-1">
+                      <input
+                        type="checkbox"
+                        checked={p.enabled}
+                        onChange={(e) => save(list.map((x) => (x.id === p.id ? { ...x, enabled: e.currentTarget.checked } : x)))}
+                        className="h-5 w-5 shrink-0"
+                        aria-label={`Poll ${p.name}`}
+                      />
+                      <span className="min-w-0">
+                        <span className={`block ${p.enabled ? "" : "text-zinc-500"}`}>
+                          {p.name} {p.unit && <span className="text-zinc-500">({p.unit})</span>}
+                        </span>
+                        <span className="block break-all font-mono text-xs text-zinc-500">
+                          {p.header ? `ATSH ${p.header} · ` : ""}
+                          {p.request} → {p.prefix || safePrefix(p.request)} · {p.formula} · {p.tier}
+                        </span>
                       </span>
-                      <span className="block break-all font-mono text-xs text-zinc-500">
-                        {p.header ? `ATSH ${p.header} · ` : ""}
-                        {p.request} → {p.prefix || safePrefix(p.request)} · {p.formula} · {p.tier}
-                      </span>
-                    </span>
-                  </label>
-                  <button className="text-sm text-sky-300 underline disabled:opacity-40" disabled={!test.connected || test.busy} onClick={() => void test.run(p)}>
-                    Test once
-                  </button>
-                  <button className="text-sm text-sky-300 underline" onClick={() => setDraft(toDraft(p, false))}>
-                    Edit
-                  </button>
-                  <button className="text-sm text-red-300 underline" onClick={() => confirm(`Delete the custom PID "${p.name}"?`) && save(list.filter((x) => x.id !== p.id))}>
-                    Delete
-                  </button>
-                </div>
-                {test.result?.id === p.id && <Result r={test.result.r} unit={p.unit} />}
-              </li>
-            ))}
-          </ul>
-        )}
-        {mounted && !test.connected && <p className="mt-2 text-xs text-zinc-500">Connect (or start Demo mode) to use Test once.</p>}
-      </section>
+                    </label>
+                    <button className="text-sm text-sky-300 underline disabled:opacity-40" disabled={!test.connected || test.busy} onClick={() => void test.run(p)}>
+                      Test once
+                    </button>
+                    <button className="text-sm text-sky-300 underline" onClick={() => setDraft(toDraft(p, false))}>
+                      Edit
+                    </button>
+                    <button className="text-sm text-red-300 underline" onClick={() => confirm(`Delete the custom PID "${p.name}"?`) && save(list.filter((x) => x.id !== p.id))}>
+                      Delete
+                    </button>
+                  </div>
+                  {test.result?.id === p.id && <Result r={test.result.r} unit={p.unit} />}
+                </li>
+              ))}
+            </ul>
+          )}
+          {mounted && !test.connected && <p className="mt-2 text-xs text-zinc-500">Connect (or start Demo mode) to use Test once.</p>}
+        </section>
+      </StoppedOnly>
 
       <section className={card}>
         <h2 className="font-semibold">Example: works only in Demo mode</h2>

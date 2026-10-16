@@ -10,6 +10,7 @@ import { useConnection } from "@/lib/store/connection";
 import { ATRV, liveDef, useLive } from "@/lib/store/live";
 import { useAlertRules, useCustomPids, useRedline, useUnits } from "@/lib/store/settings";
 import { toDisplay, type UnitSystem } from "@/lib/units";
+import { StoppedOnly } from "@/components/ui";
 import { useMounted } from "../connect/hooks";
 
 const card = "rounded-xl border border-zinc-800 bg-zinc-900 p-4";
@@ -173,7 +174,11 @@ export function AlertsPage() {
         </button>
       </div>
 
-      {draft && <RuleForm key={draft.id ?? "new" + draft.pid + draft.threshold} draft={draft} ids={ids} onDone={() => setDraft(null)} />}
+      {draft && (
+        <StoppedOnly label="The alert rule editor">
+          <RuleForm key={draft.id ?? "new" + draft.pid + draft.threshold} draft={draft} ids={ids} onDone={() => setDraft(null)} />
+        </StoppedOnly>
+      )}
 
       <section className={card}>
         <h2 className="font-semibold">Your rules</h2>

@@ -1,13 +1,15 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { FolderCard } from "@/components/storage/FolderCard";
-import { Button, Panel } from "@/components/ui";
+import { Button, Panel, StoppedOnly, Switch } from "@/components/ui";
 import { useFolder } from "@/lib/storage/folder";
 import { useConnection } from "@/lib/store/connection";
+import { useOpenAfterConnect } from "@/lib/store/settings";
 import { AdapterInfoCard } from "./AdapterInfoCard";
 import { CompatBanner } from "./CompatBanner";
 import { DebugConsole } from "./DebugConsole";
-import { useHasBluetooth } from "./hooks";
+import { useHasBluetooth, useKnownAdapter, useMounted } from "./hooks";
 import { StatusCard } from "./StatusCard";
 import { Troubleshooting } from "./Troubleshooting";
 import { UuidSettings } from "./UuidSettings";
@@ -22,9 +24,16 @@ const STEPS = [
 export function ConnectScreen() {
   const hasBt = useHasBluetooth();
   const { status, connect } = useConnection();
+  const router = useRouter();
+  const mounted = useMounted();
+  const known = useKnownAdapter();
+  const [openAfter, setOpenAfter] = useOpenAfterConnect();
   const busy = status === "connecting" || status === "reconnecting";
-  const start = (mode: "ble" | "demo") => {
-    void connect(mode); // first, so the Bluetooth chooser gets this tap's user gesture
+  const start = (mode: "ble" | "demo", device?: BluetoothDevice) => {
+    // First, so the Bluetooth chooser gets this tap's user gesture. After "Start driving", go straight to the drive view.
+    void connect(mode, device).then(() => {
+      if (openAfter && useConnection.getState().status === "connected") router.push("/dashboard");
+    });
     // The tap is a gesture too: use it to ask for the folder again (browsers forget the grant between visits).
     const folder = useFolder.getState();
     if (folder.status === "needs-permission") void folder.regrant();
@@ -48,14 +57,28 @@ export function ConnectScreen() {
                 <li key={s}>{s}</li>
               ))}
             </ol>
-            <div className="mt-5 grid gap-2 sm:grid-cols-2">
-              <Button variant="primary" onClick={() => start("ble")} disabled={!hasBt || busy}>
-                Connect
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {known && (
+                <Button size="drive" variant="primary" className="sm:col-span-2" onClick={() => start("ble", known.device)} disabled={busy}>
+                  Reconnect to {known.name}
+                </Button>
+              )}
+              <Button size="drive" variant={known ? "secondary" : "primary"} onClick={() => start("ble")} disabled={!hasBt || busy}>
+                {known ? "Choose adapter" : "Connect"}
               </Button>
-              <Button onClick={() => start("demo")} disabled={busy}>
+              <Button size="drive" onClick={() => start("demo")} disabled={busy}>
                 Demo mode
               </Button>
             </div>
+            {mounted && (
+              <Switch
+                className="mt-3"
+                checked={openAfter}
+                onChange={setOpenAfter}
+                label="Open the drive view after connecting"
+                description="Turned on by Start driving"
+              />
+            )}
           </Panel>
           <FolderCard />
         </div>
@@ -63,7 +86,9 @@ export function ConnectScreen() {
           <AdapterInfoCard />
           <Troubleshooting />
           <DebugConsole />
-          <UuidSettings />
+          <StoppedOnly label="Adapter profiles and Bluetooth UUIDs">
+            <UuidSettings />
+          </StoppedOnly>
         </div>
       </div>
     </main>

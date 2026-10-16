@@ -3,7 +3,7 @@
 import { HISTORY_MS } from "@/lib/store/live";
 
 /** A single-series trend line over the live history window, auto-scaled (no axes: the card shows the value). */
-export function Sparkline({ points, color = "#3987e5" }: { points: { t: number; v: number }[]; color?: string }) {
+export function Sparkline({ points, color = "var(--accent)" }: { points: { t: number; v: number }[]; color?: string }) {
   if (points.length < 2) return <div className="h-10" />;
   const end = points[points.length - 1]!.t;
   const vs = points.map((p) => p.v);

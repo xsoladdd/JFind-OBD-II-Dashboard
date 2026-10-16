@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { Button, buttonClass, Field, Input, NO_VALUE, nextIndex, Stat } from "./index";
+import { Button, buttonClass, Field, Input, NO_VALUE, nextIndex, Stat, StoppedOnlyView } from "./index";
 
 describe("SegmentedControl keys", () => {
   it("wraps around with the arrows and jumps with Home/End", () => {
@@ -24,6 +24,7 @@ describe("Button", () => {
   it("gives every size a 44px+ target", () => {
     expect(buttonClass("primary", "md")).toContain("min-h-12");
     expect(buttonClass("ghost", "sm")).toContain("min-h-11");
+    expect(buttonClass("primary", "drive")).toContain("min-h-18");
   });
 });
 
@@ -44,5 +45,27 @@ describe("Field", () => {
     const id = /<label for="([^"]+)"/.exec(html)?.[1];
     expect(id).toBeTruthy();
     expect(html).toContain(`<input id="${id}" aria-describedby="${id}-hint ${id}-error" aria-invalid="true"`);
+  });
+});
+
+describe("StoppedOnly", () => {
+  const form = <input name="odometer" />;
+
+  it("renders its children normally while stopped", () => {
+    const html = renderToStaticMarkup(<StoppedOnlyView driving={false}>{form}</StoppedOnlyView>);
+    expect(html).not.toContain("Available when stopped");
+    expect(html).not.toContain("hidden");
+    expect(html).toContain('name="odometer"');
+  });
+
+  it("swaps in the lock panel while driving, keeping the children mounted but hidden and inert", () => {
+    const html = renderToStaticMarkup(
+      <StoppedOnlyView driving label="Car details">
+        {form}
+      </StoppedOnlyView>,
+    );
+    expect(html).toContain("Available when stopped");
+    expect(html).toContain("Car details");
+    expect(html).toMatch(/<div hidden="" inert="" class="hidden"><input name="odometer"/);
   });
 });

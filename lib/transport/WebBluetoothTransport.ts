@@ -43,6 +43,8 @@ export class WebBluetoothTransport implements Transport {
   /** How writes really go out, once connected: decided by the override and what the characteristic offers. */
   writeMethod: "with-response" | "without-response" | null = null;
   deviceName = "";
+  /** The browser's per-origin id for the device, for a later reconnect without the chooser (lib/transport/knownAdapter.ts). */
+  deviceId = "";
 
   private device: BluetoothDevice | null = null;
   private notifyChar: BluetoothRemoteGATTCharacteristic | null = null;
@@ -51,16 +53,23 @@ export class WebBluetoothTransport implements Transport {
   private dropped = new Emitter<[]>();
   private decoder = new TextDecoder();
 
-  constructor(private overrides: UuidOverrides) {}
+  /** `known`: a device the user already granted (navigator.bluetooth.getDevices()), so the chooser is skipped. */
+  constructor(
+    private overrides: UuidOverrides,
+    private known?: BluetoothDevice,
+  ) {}
 
   async connect() {
     if (!hasWebBluetooth()) throw new Error("Web Bluetooth is not available in this browser");
     const extra = this.overrides.service ? [canonicalUuid(this.overrides.service)] : [];
-    this.device = await navigator.bluetooth.requestDevice({
-      acceptAllDevices: true,
-      optionalServices: [...CANDIDATE_SERVICES, ...extra],
-    });
+    this.device =
+      this.known ??
+      (await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: [...CANDIDATE_SERVICES, ...extra],
+      }));
     this.deviceName = this.device.name ?? "(unnamed)";
+    this.deviceId = this.device.id;
     this.device.addEventListener("gattserverdisconnected", () => this.dropped.emit());
     await this.setup();
   }

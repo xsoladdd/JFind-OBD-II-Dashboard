@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { SERVICE_LABEL, SERVICE_TYPES, todayIso, type CarProfile, type ServiceEntry, type ServiceType } from "@/lib/garage/model";
 import { useGarage } from "@/lib/store/garage";
+import { StoppedOnly } from "@/components/ui";
 import { btn, btnPrimary, card, Field, input, num, str } from "./ui";
 
 const blank = (carId: string): ServiceEntry => ({
@@ -91,7 +92,11 @@ export function ServiceLog({ car }: { car: CarProfile }) {
           </button>
         )}
       </div>
-      {editing && <EntryForm key={editing.id} car={car} initial={editing} onDone={() => setEditing(null)} />}
+      {editing && (
+        <StoppedOnly label="Service entry" className="mt-3">
+          <EntryForm key={editing.id} car={car} initial={editing} onDone={() => setEditing(null)} />
+        </StoppedOnly>
+      )}
       {rows.length === 0 && !editing && <p className="mt-3 text-sm text-zinc-400">No service entries yet.</p>}
       <ul className="mt-3 divide-y divide-zinc-800">
         {rows.map((s) => (

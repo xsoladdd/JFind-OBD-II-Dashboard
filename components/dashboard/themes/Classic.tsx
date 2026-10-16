@@ -1,30 +1,33 @@
 "use client";
 
-import { COOLANT_HOT_C, FUEL_LOW_PCT } from "@/lib/dashboard/zones";
+import { cx } from "@/components/ui";
 import { useRedline } from "@/lib/store/settings";
 import { Gauge } from "../Gauge";
-import { useDisplay } from "../live";
+import { useDisplay, zonesFor } from "../live";
 
-const RED = "#e66767";
-const AMBER = "#c98500";
+const PIDS = [
+  { id: "010C", tickScale: 1000, primary: true },
+  { id: "010D", tickScale: 1, ticks: 12, primary: true },
+  { id: "0105", tickScale: 1 },
+  { id: "012F", tickScale: 1 },
+];
 
-export function Classic() {
+function Cell({ id, tickScale, ticks, primary }: (typeof PIDS)[number]) {
   const [redline] = useRedline();
-  const rpm = useDisplay("010C");
-  const speed = useDisplay("010D");
-  const coolant = useDisplay("0105");
-  const fuel = useDisplay("012F");
+  const d = useDisplay(id);
   return (
-    <div className="mx-auto grid max-w-2xl grid-cols-2 gap-3">
-      {[
-        { d: rpm, zones: [{ from: redline, to: rpm.max, color: RED }], tickScale: 1000 },
-        { d: speed, zones: [], tickScale: 1, ticks: 12 },
-        { d: coolant, zones: [{ from: coolant.conv(COOLANT_HOT_C), to: coolant.max, color: RED }], tickScale: 1 },
-        { d: fuel, zones: [{ from: fuel.min, to: fuel.conv(FUEL_LOW_PCT), color: AMBER }], tickScale: 1 },
-      ].map(({ d, zones, tickScale, ticks }) => (
-        <div key={d.name} className="rounded-xl border border-zinc-800 bg-zinc-900 p-2 sm:p-4">
-          <Gauge label={d.name} unit={d.unit} value={d.value} min={d.min} max={d.max} zones={zones} tickScale={tickScale} ticks={ticks} />
-        </div>
+    <div className={cx("min-h-0 min-w-0 rounded-panel border border-line bg-surface-1 p-2", primary && "col-span-2 md:col-span-1")}>
+      <Gauge label={d.name} unit={d.unit} value={d.value} min={d.min} max={d.max} zones={zonesFor(id, d, redline)} tickScale={tickScale} ticks={ticks} />
+    </div>
+  );
+}
+
+/** Four needle gauges. Portrait: RPM and speed full width, coolant and fuel side by side. Desktop: 2×2. Landscape phone: one row. */
+export function Classic() {
+  return (
+    <div className="grid h-full grid-cols-2 grid-rows-[1fr_1fr_0.75fr] gap-3 md:grid-rows-2 short:grid-cols-4 short:grid-rows-1">
+      {PIDS.map((p) => (
+        <Cell key={p.id} {...p} />
       ))}
     </div>
   );

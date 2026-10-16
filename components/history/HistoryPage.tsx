@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { btn, card } from "@/components/garage/ui";
 import { FolderCard } from "@/components/storage/FolderCard";
+import { StoppedOnly } from "@/components/ui";
 import { readText, removeFile, useFolder } from "@/lib/storage/folder";
 import { listLogs, listScans, type ScanSummary } from "@/lib/storage/history";
 
@@ -152,9 +153,11 @@ export function HistoryPage() {
                   </button>
                 </div>
                 {viewing?.name === `logs/${l.name}` && (
-                  <pre className="mt-2 max-h-96 overflow-auto whitespace-pre-wrap break-all rounded-md bg-black p-2 font-mono text-xs leading-5 text-zinc-300">
-                    {viewing.text || "(empty)"}
-                  </pre>
+                  <StoppedOnly label="The log viewer" className="mt-2">
+                    <pre className="mt-2 max-h-96 overflow-auto whitespace-pre-wrap break-all rounded-md bg-black p-2 font-mono text-xs leading-5 text-zinc-300">
+                      {viewing.text || "(empty)"}
+                    </pre>
+                  </StoppedOnly>
                 )}
               </li>
             ))}

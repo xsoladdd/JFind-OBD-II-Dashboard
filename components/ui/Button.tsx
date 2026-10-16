@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes } from "react";
 import { cx } from "./cx";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
-export type ButtonSize = "md" | "sm";
+export type ButtonSize = "md" | "sm" | "drive";
 
 const BASE =
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control font-semibold transition-[background-color,color,translate] duration-150 active:translate-y-px disabled:pointer-events-none disabled:opacity-40 aria-busy:cursor-progress";
@@ -12,8 +12,9 @@ const VARIANT: Record<ButtonVariant, string> = {
   ghost: "text-fg-muted hover:bg-surface-2 hover:text-fg",
   danger: "border border-danger/50 bg-danger-soft text-danger-fg hover:bg-danger hover:text-on-danger",
 };
-// Both sizes clear the 44px touch target; md is the default in a car.
-const SIZE: Record<ButtonSize, string> = { md: "min-h-12 px-5 text-base", sm: "min-h-11 px-4 text-sm" };
+// Every size clears the 44px touch target. "drive" is the drive-context target (DESIGN.md "Driving": 72px, an app
+// choice, not from a standard): use it for anything the driver may tap while moving.
+const SIZE: Record<ButtonSize, string> = { md: "min-h-12 px-5 text-base", sm: "min-h-11 px-4 text-sm", drive: "min-h-18 px-6 text-xl" };
 
 /** Class string for anything that should look like a button (a Link, a file-input label). */
 export const buttonClass = (variant: ButtonVariant = "secondary", size: ButtonSize = "md") =>
@@ -57,7 +58,7 @@ export function IconButton({ label, variant = "ghost", size, className, ...rest 
       size={size}
       aria-label={label}
       title={label}
-      className={cx(size === "sm" ? "min-w-11 px-0" : "min-w-12 px-0", className)}
+      className={cx(size === "sm" ? "min-w-11 px-0" : size === "drive" ? "min-w-18 px-0" : "min-w-12 px-0", className)}
       {...rest}
     />
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button, NO_VALUE, panelClass } from "@/components/ui";
 import { startRecording, toCsv } from "@/lib/dashboard/recorder";
 import { liveDef, useLive } from "@/lib/store/live";
 import { useUnits } from "@/lib/store/settings";
@@ -42,7 +43,7 @@ export function Engineer() {
 
   const show = (id: string, raw: number | undefined) => {
     const unit = liveDef(id)?.unit ?? "";
-    return raw === undefined ? "—" : fmt(toDisplay(raw, unit, units).value, unit);
+    return raw === undefined ? NO_VALUE : fmt(toDisplay(raw, unit, units).value, unit);
   };
   const unitOf = (id: string) => toDisplay(0, liveDef(id)?.unit ?? "", units).unit;
   const now = Math.max(0, ...Object.values(values).map((v) => v.t));
@@ -53,29 +54,26 @@ export function Engineer() {
   });
 
   return (
-    <div className="space-y-4">
-      <section className="rounded-xl border border-zinc-800 bg-zinc-900 p-3">
-        <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+    <div className="h-full space-y-4 overflow-y-auto overscroll-contain">
+      <section className={`${panelClass} p-3 sm:p-4`}>
+        <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
           {series.map((s) => (
-            <span key={s.id} className="flex items-center gap-1.5 text-zinc-300">
+            <span key={s.id} className="flex items-center gap-1.5 text-fg-muted">
               <span className="h-0.5 w-4" style={{ background: s.color }} />
               {s.label}
             </span>
           ))}
-          {!series.length && <span className="text-zinc-500">Tick up to {MAX_SERIES} PIDs in the table to chart them.</span>}
-          <button
-            onClick={record}
-            className={`ml-auto rounded-md px-3 py-1.5 text-sm font-semibold ${rec ? "bg-red-600 text-white" : "border border-zinc-600 hover:bg-zinc-800"}`}
-          >
-            {rec ? `■ Stop & save CSV (${rec.count})` : "● Record"}
-          </button>
+          {!series.length && <span className="text-fg-faint">Tick up to {MAX_SERIES} PIDs in the table to chart them.</span>}
+          <Button size="sm" variant={rec ? "danger" : "secondary"} className="ml-auto" onClick={record}>
+            {rec ? `Stop and save CSV (${rec.count})` : "Record"}
+          </Button>
         </div>
         <LineChart series={series} now={now} />
       </section>
 
-      <div className="overflow-x-auto rounded-xl border border-zinc-800">
-        <table className="w-full text-xs sm:text-sm">
-          <thead className="bg-zinc-900 text-left text-xs uppercase tracking-wide text-zinc-500">
+      <div className="overflow-x-auto rounded-panel border border-line">
+        <table className="w-full text-sm sm:text-base">
+          <thead className="bg-surface-1 text-left text-sm text-fg-faint">
             <tr>
               <th className="w-8 px-2 py-2" aria-label="Chart" />
               <th className="hidden px-2 py-2 sm:table-cell">PID</th>
@@ -87,15 +85,16 @@ export function Engineer() {
               <th className="hidden px-2 py-2 sm:table-cell">Unit</th>
             </tr>
           </thead>
-          <tbody className="font-mono tabular-nums">
+          <tbody className="num font-medium">
             {supported.map((id) => {
               const v = values[id];
               const def = liveDef(id);
               const slot = shown[id];
               return (
-                <tr key={id} className="border-t border-zinc-800/70 odd:bg-zinc-950 even:bg-zinc-900/40">
+                <tr key={id} className="border-t border-line even:bg-surface-1/50">
                   <td className="px-2 py-1.5">
                     <input
+                      className="size-5"
                       type="checkbox"
                       checked={slot !== undefined}
                       onChange={() => toggle(id)}
@@ -104,25 +103,25 @@ export function Engineer() {
                       style={slot !== undefined ? { accentColor: SERIES[slot] } : undefined}
                     />
                   </td>
-                  <td className="hidden px-2 py-1.5 text-zinc-500 sm:table-cell">{id}</td>
-                  <td className="px-2 py-1.5 font-sans text-zinc-200">
+                  <td className="hidden px-2 py-1.5 text-fg-faint sm:table-cell">{id}</td>
+                  <td className="px-2 py-1.5 font-sans font-normal text-fg [font-stretch:100%]">
                     {def?.name ?? id}
-                    <span className="block text-[11px] text-zinc-500 sm:hidden">
+                    <span className="block text-[13px] text-fg-faint sm:hidden">
                       {id} · {unitOf(id)}
                     </span>
                   </td>
                   {def?.text ? (
                     // Enum / status PIDs: text across the stats columns; min, max and average of a code mean nothing.
-                    <td colSpan={4} className="px-2 py-1.5 text-right font-sans text-zinc-50">{v ? def.text(v.value) : "—"}</td>
+                    <td colSpan={4} className="px-2 py-1.5 text-right font-sans text-fg [font-stretch:100%]">{v ? def.text(v.value) : NO_VALUE}</td>
                   ) : (
                     <>
-                      <td className="px-2 py-1.5 text-right text-zinc-50">{show(id, v?.value)}</td>
-                      <td className="px-2 py-1.5 text-right text-zinc-400">{show(id, v?.min)}</td>
-                      <td className="px-2 py-1.5 text-right text-zinc-400">{show(id, v?.max)}</td>
-                      <td className="px-2 py-1.5 text-right text-zinc-400">{show(id, v && v.sum / v.count)}</td>
+                      <td className="px-2 py-1.5 text-right text-fg">{show(id, v?.value)}</td>
+                      <td className="px-2 py-1.5 text-right text-fg-muted">{show(id, v?.min)}</td>
+                      <td className="px-2 py-1.5 text-right text-fg-muted">{show(id, v?.max)}</td>
+                      <td className="px-2 py-1.5 text-right text-fg-muted">{show(id, v && v.sum / v.count)}</td>
                     </>
                   )}
-                  <td className="hidden px-2 py-1.5 font-sans text-zinc-500 sm:table-cell">{unitOf(id)}</td>
+                  <td className="hidden px-2 py-1.5 font-sans font-normal text-fg-faint [font-stretch:100%] sm:table-cell">{unitOf(id)}</td>
                 </tr>
               );
             })}

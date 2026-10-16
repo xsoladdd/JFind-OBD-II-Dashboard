@@ -1,110 +1,113 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import { Button, cx, StoppedOnly } from "@/components/ui";
 import { usePolling } from "@/lib/polling";
 import { useConnection } from "@/lib/store/connection";
-import { useLive } from "@/lib/store/live";
-import { useRedline, useTheme, useUnits, type ThemeId } from "@/lib/store/settings";
-import { useMounted } from "../connect/hooks";
+import { useTheme } from "@/lib/store/settings";
+import { useKnownAdapter, useMounted } from "../connect/hooks";
+import { AlertBanner, ReconnectingBanner } from "./DriveBanners";
+import { DriveSettings, THEME_OPTIONS } from "./DriveSettings";
 import { Classic } from "./themes/Classic";
 import { Custom } from "./themes/Custom";
+import { Drive } from "./themes/Drive";
 import { Engineer } from "./themes/Engineer";
 import { Hud } from "./themes/Hud";
 import { Minimal } from "./themes/Minimal";
 import { Sport } from "./themes/Sport";
+import { useFullscreen } from "./useFullscreen";
 import { useWakeLock } from "./useWakeLock";
 
-const THEMES: { id: ThemeId; label: string; view: () => React.ReactNode }[] = [
-  { id: "classic", label: "Classic", view: Classic },
-  { id: "sport", label: "Sport", view: Sport },
-  { id: "minimal", label: "Minimal", view: Minimal },
-  { id: "engineer", label: "Engineer", view: Engineer },
-  { id: "hud", label: "HUD", view: Hud },
-  { id: "custom", label: "Custom", view: Custom },
-];
+const VIEWS = { drive: Drive, classic: Classic, sport: Sport, hud: Hud, minimal: Minimal };
 
-function NotConnected() {
+/** Not connected (or the link was lost): one word, then one huge button. */
+function NotConnected({ lost }: { lost: boolean }) {
   const status = useConnection((s) => s.status);
+  const error = useConnection((s) => s.error);
   const connect = useConnection((s) => s.connect);
+  const known = useKnownAdapter();
   const busy = status === "connecting" || status === "reconnecting";
   return (
-    <section className="mx-auto mt-10 max-w-md rounded-xl border border-zinc-800 bg-zinc-900 p-6 text-center">
-      <h2 className="text-lg font-semibold">{busy ? "Connecting…" : "No live data"}</h2>
-      <p className="mt-2 text-sm text-zinc-400">Connect to the adapter, or try the dashboard with the built-in simulator.</p>
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-center">
-        <Link href="/" className="rounded-md bg-sky-600 px-5 py-3 font-semibold hover:bg-sky-500">
-          Connect
-        </Link>
-        <button onClick={() => void connect("demo")} disabled={busy} className="rounded-md border border-zinc-600 px-5 py-3 font-semibold hover:bg-zinc-800 disabled:opacity-40">
-          Start demo
-        </button>
+    <section aria-live="polite" className="mx-auto flex h-full max-w-md flex-col justify-center gap-6">
+      <div>
+        <h1 className={cx("text-5xl font-bold tracking-tight", lost && !busy && "text-danger-fg")}>
+          {busy ? "Connecting…" : lost ? "Connection lost" : "Not connected"}
+        </h1>
+        {error && !busy && <p className="mt-3 text-lg text-fg-muted">{error}</p>}
+      </div>
+      <div className="grid gap-4">
+        {/* Each connect starts from this tap: the browser's Bluetooth rules need the user gesture. */}
+        <Button size="drive" variant="primary" disabled={busy} onClick={() => void connect("ble", known?.device)}>
+          {known ? `Reconnect to ${known.name}` : "Connect"}
+        </Button>
+        <Button size="drive" disabled={busy} onClick={() => void connect("demo")}>
+          Demo mode
+        </Button>
       </div>
     </section>
   );
 }
 
+/**
+ * The drive view: the whole screen is the gauges (the shell steps back via the `drive:` variant on #drive-view).
+ * Settings, other pages and parked-only tools sit behind one Menu button.
+ */
 export function Dashboard() {
   usePolling();
   const wake = useWakeLock();
+  const fullscreen = useFullscreen();
   const mounted = useMounted();
   const status = useConnection((s) => s.status);
-  const hz = useLive((s) => s.hz);
   const [theme, setTheme] = useTheme();
-  const [units, setUnits] = useUnits();
-  const [redlineRpm, setRedline] = useRedline();
-  const [draft, setDraft] = useState<string | null>(null);
-  const View = THEMES.find((t) => t.id === theme)?.view ?? Classic;
+  const [menu, setMenu] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const known = THEME_OPTIONS.some((t) => t.value === theme) ? theme : "drive";
+
+  // A dropped link that couldn't come back leaves the mode set; Disconnect clears it (lib/store/connection.ts).
+  const lost = useConnection((s) => s.status === "idle" && s.mode !== null);
+
+  const live = mounted && (status === "connected" || status === "reconnecting");
+  const View = known === "custom" || known === "engineer" ? null : VIEWS[known];
+  const view = View ? (
+    <View />
+  ) : known === "custom" ? (
+    <Custom editing={editing} setEditing={setEditing} />
+  ) : (
+    <StoppedOnly label="The Engineer table">
+      <Engineer />
+    </StoppedOnly>
+  );
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-4 px-4 py-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex overflow-x-auto rounded-lg border border-zinc-800 p-0.5" role="tablist" aria-label="Dashboard theme">
-          {THEMES.map((t) => (
-            <button
-              key={t.id}
-              role="tab"
-              aria-selected={theme === t.id}
-              onClick={() => setTheme(t.id)}
-              className={`shrink-0 rounded-md px-3 py-1.5 text-sm font-medium ${theme === t.id ? "bg-zinc-700 text-white" : "text-zinc-400 hover:text-zinc-200"}`}
-            >
-              {t.label}
-            </button>
-          ))}
+    <main
+      id="drive-view"
+      className="fixed inset-0 z-30 flex flex-col gap-4 bg-bg pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] short:flex-row"
+    >
+      <div className="relative min-h-0 min-w-0 flex-1">
+        {live && <h1 className="sr-only">Dashboard</h1>}
+        <div className={cx("h-full transition-opacity duration-150", status === "reconnecting" && "opacity-30")}>
+          {live ? view : <NotConnected lost={lost} />}
         </div>
-        <button
-          onClick={() => setUnits(units === "metric" ? "imperial" : "metric")}
-          className="rounded-lg border border-zinc-800 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-900"
-          aria-label={`Units: ${units}. Switch`}
-        >
-          {units === "metric" ? "km/h · °C" : "mph · °F"}
-        </button>
-        <label className="flex items-center gap-2 rounded-lg border border-zinc-800 px-3 py-1.5 text-sm text-zinc-400" title="Your car's redline. Drives the red zone and shift lights.">
-          Redline
-          <input
-            type="number"
-            inputMode="numeric"
-            min={1000}
-            max={12000}
-            step={100}
-            value={draft ?? redlineRpm}
-            onChange={(e) => {
-              setDraft(e.currentTarget.value); // let partial input like "6" through while typing
-              const v = e.currentTarget.valueAsNumber;
-              if (v >= 1000 && v <= 12000) setRedline(v);
-            }}
-            onBlur={() => setDraft(null)}
-            className="w-16 bg-transparent font-mono text-zinc-100 outline-none"
-          />
-        </label>
-        <div className="ml-auto flex items-center gap-3 text-xs text-zinc-500">
-          {wake && <span title="Screen Wake Lock active">☀ screen on</span>}
-          <span className="font-mono tabular-nums" title="Completed PID reads per second">
-            {hz.toFixed(1)} Hz
-          </span>
+        <div className="absolute inset-x-0 top-0 z-10 space-y-3">
+          {live && status === "reconnecting" && <ReconnectingBanner />}
+          {live && <AlertBanner />}
         </div>
       </div>
-      {mounted && status === "connected" ? <View /> : <NotConnected />}
+      <div className="flex shrink-0 justify-end short:flex-col">
+        <Button size="drive" className="min-w-40" aria-haspopup="dialog" aria-expanded={menu} onClick={() => setMenu(true)}>
+          Menu
+        </Button>
+      </div>
+      <DriveSettings
+        open={menu}
+        onClose={() => setMenu(false)}
+        theme={known}
+        setTheme={setTheme}
+        editing={editing}
+        setEditing={setEditing}
+        wake={wake}
+        fullscreen={fullscreen}
+      />
     </main>
   );
 }

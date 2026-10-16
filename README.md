@@ -5,7 +5,7 @@ A client-only web app for the JF327 (an ELM327-style Bluetooth LE OBD-II adapter
 ## What it does
 
 - **Connect** (`/`): Web Bluetooth connection, an adapter info card, a troubleshooting guide, adapter profiles (saved UUID and write-method sets), a raw debug console and Demo mode. See [docs/connection-helper.md](docs/connection-helper.md).
-- **Dashboard** (`/dashboard`): live gauges in six themes (Classic, Sport, Minimal, Engineer, HUD, Custom) on a priority polling scheduler. See [docs/dashboard.md](docs/dashboard.md).
+- **Dashboard** (`/dashboard`): live gauges in seven layouts (Drive, Classic, Sport, Minimal, Engineer, HUD, Custom) on a priority polling scheduler. See [docs/dashboard.md](docs/dashboard.md).
 - **Custom dashboard builder and alerts** (`/alerts`): your own layouts, and alert rules with sound and vibration. See [docs/custom-dashboard-and-alerts.md](docs/custom-dashboard-and-alerts.md).
 - **Diagnostics** (`/diagnostics`): codes, freeze frame, readiness, safe clear, export, scans saved to your folder, and a per-code history across saved scans. See [docs/diagnostics.md](docs/diagnostics.md) and [docs/code-history.md](docs/code-history.md).
 - **ECU** (`/ecu`): Mode 06 tests, codes per module, Mode 09 vehicle info, battery test. See [docs/ecu.md](docs/ecu.md).
@@ -15,6 +15,7 @@ A client-only web app for the JF327 (an ELM327-style Bluetooth LE OBD-II adapter
 - **History** (`/history`) and storage: `settings.json`, scan history, Garage file and debug logs in a folder you pick, or the browser's private storage where there is no folder picker. See [docs/storage.md](docs/storage.md).
 - **PIDs** (`/pids`): about 40 more standard Mode 01 readings, and your own custom PIDs (manufacturer Mode 21/22) with a safe formula parser, header switching, Test once and JSON import/export. See [docs/custom-pids.md](docs/custom-pids.md).
 - **Design**: the Cluster look, its tokens and the UI kit. See [DESIGN.md](DESIGN.md) and [docs/ui-kit.md](docs/ui-kit.md).
+- **Driving**: a full-screen drive view, 72px targets, night dim, one-tap reconnect and screens that lock while the car moves. See [DESIGN.md §12](DESIGN.md#12-driving) and [docs/dashboard.md](docs/dashboard.md).
 
 On phones the bottom bar shows four main pages (Dashboard, Diagnostics, Garage, Trips) plus **More**, which lists the rest. The sidebar on larger screens lists everything. The page list lives in `lib/nav.ts`.
 
@@ -140,3 +141,7 @@ Things I couldn't confirm without the hardware or an authoritative source:
 - [ ] **Dyno sample rate on the JF327**: how many 010C and 010D readings per second a real pull gets (Demo mode gets about 7 of each). Fewer readings mean a rougher curve; check the rate in the run's "inputs used".
 - [ ] **010D rounding**: whether the car rounds or truncates vehicle speed. Truncation biases the fitted gear ratio slightly at low speed.
 - [ ] **Cluster legibility in the car**: contrast was measured (WCAG ratios in DESIGN.md), not tried on a real phone in a mount in direct sun and at night. Check the faint text (units, inactive tabs) and the landscape rail.
+- [ ] **NHTSA glance figures** (DESIGN.md §12): "about 2 s per glance, about 12 s total eyes-off-road per task" are quoted from memory of NHTSA's *Visual-Manual Driver Distraction Guidelines for In-Vehicle Electronic Devices*. Check them against the published guidelines.
+- [ ] **Reconnect without the chooser**: `navigator.bluetooth.getDevices()` support varies by browser, version and flags (Chrome may need `chrome://flags/#enable-web-bluetooth-new-permissions-backend`). It is feature-detected; check whether "Reconnect to <adapter>" appears and connects with the JF327 on the phone's browser, including when the adapter was unplugged in between.
+- [ ] **Moving or stopped from 010D**: the lock uses vehicle speed above 0. Check that the JF327 car reports exactly 0 when stopped (not 1 to 2 km/h of creep or noise), or forms will stay locked at the lights.
+- [ ] **Drive targets and night dim in a real car**: 72px targets with 16px gaps and the dim token values are app choices tried in a desktop browser only. Try them in a mount, in daylight and at night.

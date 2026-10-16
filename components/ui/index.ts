@@ -9,3 +9,4 @@ export { SegmentedControl, nextIndex } from "./SegmentedControl";
 export { Sheet } from "./Sheet";
 export { NO_VALUE, Stat } from "./Stat";
 export { Switch } from "./Switch";
+export { StoppedOnly, StoppedOnlyView } from "./StoppedOnly";

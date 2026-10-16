@@ -4,10 +4,10 @@ import { sanitizeProfiles, type AdapterProfile } from "../connect/profiles";
 import { sanitizeCustomPids, type CustomPid } from "../obd/custom";
 import { EMPTY_LAYOUTS, type CustomLayouts } from "../dashboard/layouts";
 import type { UnitSystem } from "../units";
-import { getSetting, useSetting } from "../storage/settings";
+import { getSetting, setSetting, useSetting } from "../storage/settings";
 import { EXAMPLE_CDA_M2, EXAMPLE_CRR } from "../trips/dyno";
 
-export type ThemeId = "classic" | "sport" | "minimal" | "engineer" | "hud" | "custom";
+export type ThemeId = "drive" | "classic" | "sport" | "minimal" | "engineer" | "hud" | "custom";
 
 /** Car-specific; the default is a placeholder the user should change (README [verify]). */
 export const DEFAULT_REDLINE = 6500;
@@ -15,9 +15,42 @@ export const DEFAULT_REDLINE = 6500;
 // Each persisted setting lives behind one hook, so the storage backend is swapped in one place.
 export const useUnits = () => useSetting<UnitSystem>("units", "metric");
 export const getUnits = () => getSetting<UnitSystem>("units", "metric");
-export const useTheme = () => useSetting<ThemeId>("dashboard.theme", "classic");
+export const useTheme = () => useSetting<ThemeId>("dashboard.theme", "drive");
 export const useRedline = () => useSetting<number>("dashboard.redlineRpm", DEFAULT_REDLINE);
 export const useHudMirror = () => useSetting<boolean>("dashboard.hudMirror", false);
+
+// Driving (DESIGN.md "Driving", docs/dashboard.md).
+/** Lower-luminance tokens for night driving, app-wide. */
+export const useNightDim = () => useSetting<boolean>("display.nightDim", false);
+/** The Drive layout's (at most 2) extra values under speed and RPM. Default: coolant and fuel level. */
+export const DRIVE_EXTRAS_MAX = 2;
+const DEFAULT_EXTRAS = ["0105", "012F"];
+const extrasCache = new WeakMap<object, string[]>();
+/** settings.json is hand-editable: keep unique non-empty strings, at most DRIVE_EXTRAS_MAX, as a stable reference. */
+export function sanitizeDriveExtras(v: unknown): string[] {
+  if (!Array.isArray(v)) return DEFAULT_EXTRAS;
+  if (!extrasCache.has(v))
+    extrasCache.set(v, [...new Set(v.filter((x): x is string => typeof x === "string" && x !== ""))].slice(0, DRIVE_EXTRAS_MAX));
+  return extrasCache.get(v)!;
+}
+export const useDriveExtras = (): [string[], (v: string[]) => void] => {
+  const [v, set] = useSetting<string[]>("dashboard.driveExtras", DEFAULT_EXTRAS);
+  return [sanitizeDriveExtras(v), set];
+};
+/** Set by "Start driving": a later Connect tap on the connect screen goes straight to the drive view. */
+export const useOpenAfterConnect = () => useSetting<boolean>("drive.openAfterConnect", false);
+/** The last Bluetooth adapter connected, for a one-tap reconnect via navigator.bluetooth.getDevices(). */
+export interface LastAdapter {
+  id: string;
+  name: string;
+}
+const lastAdapter = (v: unknown): LastAdapter | null =>
+  v && typeof v === "object" && typeof (v as LastAdapter).id === "string" && (v as LastAdapter).id
+    ? { id: (v as LastAdapter).id, name: typeof (v as LastAdapter).name === "string" ? (v as LastAdapter).name : "" }
+    : null;
+export const useLastAdapter = () => lastAdapter(useSetting<unknown>("ble.lastAdapter", null)[0]);
+export const getLastAdapter = () => lastAdapter(getSetting<unknown>("ble.lastAdapter", null));
+export const setLastAdapter = (v: LastAdapter) => setSetting("ble.lastAdapter", v);
 const NO_RULES: AlertRule[] = []; // a stable fallback reference for useSyncExternalStore
 // settings.json is hand-editable: a value of the wrong shape falls back to the default instead of crashing the page.
 const layouts = (v: CustomLayouts) => (v && Array.isArray(v.layouts) ? v : EMPTY_LAYOUTS);

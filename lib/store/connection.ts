@@ -4,6 +4,7 @@ import { parseMessages } from "../obd/parse";
 import { PIDS } from "../obd/pids";
 import { SimulatorTransport } from "../transport/SimulatorTransport";
 import { loadOverrides } from "../transport/uuidSettings";
+import { setLastAdapter } from "./settings";
 import { WebBluetoothTransport, type GattServiceInfo } from "../transport/WebBluetoothTransport";
 
 export type ConnStatus = "idle" | "connecting" | "connected" | "reconnecting" | "error";
@@ -36,7 +37,8 @@ interface ConnectionState {
   selected: { notify: string; write: string } | null;
   /** How writes go out on the real adapter (null in Demo mode or before the characteristics are chosen). */
   writeMethod: "with-response" | "without-response" | null;
-  connect: (mode: "ble" | "demo") => Promise<void>;
+  /** `device`: an adapter granted earlier (lib/transport/knownAdapter.ts), so the Bluetooth chooser is skipped. */
+  connect: (mode: "ble" | "demo", device?: BluetoothDevice) => Promise<void>;
   disconnect: () => Promise<void>;
   sendRaw: (cmd: string) => Promise<void>;
   refreshVoltage: () => Promise<void>;
@@ -83,9 +85,9 @@ export const useConnection = create<ConnectionState>((set, get) => {
     selected: null,
     writeMethod: null,
 
-    async connect(mode) {
+    async connect(mode, device) {
       if (client) await get().disconnect();
-      const transport = mode === "demo" ? new SimulatorTransport() : new WebBluetoothTransport(loadOverrides());
+      const transport = mode === "demo" ? new SimulatorTransport() : new WebBluetoothTransport(loadOverrides(), device);
       const c = new ElmClient(transport);
       client = c;
       c.onTraffic(append);
@@ -107,6 +109,7 @@ export const useConnection = create<ConnectionState>((set, get) => {
           vehicleError: info.vehicleError ?? null,
         });
         void get().refreshVoltage();
+        if (transport instanceof WebBluetoothTransport) setLastAdapter({ id: transport.deviceId, name: transport.deviceName });
       } catch (e) {
         if (client !== c) return;
         append({ dir: "error", text: errMsg(e), t: Date.now() });

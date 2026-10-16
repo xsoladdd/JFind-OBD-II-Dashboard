@@ -157,6 +157,26 @@ describe("browser fallback (OPFS)", () => {
     expect(JSON.parse(root.file("settings.json")!.data)).toEqual({ units: "imperial" });
   });
 
+  it("works for the files Trips writes (trips/*.json, trips/*.csv, perf-runs.json)", async () => {
+    const root = new FakeDir("");
+    stubOpfs(root);
+    await boot();
+    const trips = await import("../trips/files");
+    const fmt = await import("../trips/format");
+    const base = fmt.tripFileBase(Date.UTC(2026, 9, 16, 12, 0, 0), "WVWZZZ1KZAW000001");
+    await trips.writeSummary(base, { startedAt: "2026-10-16T12:00:00.000Z", endedAt: null, vin: null, durationS: 0, columns: [], gps: false } as never);
+    await trips.appendCsv(base, fmt.csvHeader([], false));
+    await trips.appendCsv(base, "row\n");
+    expect((await trips.listTrips()).map((t) => t.base)).toEqual([base]);
+    expect(await trips.readCsv(base)).toBe(`${fmt.csvHeader([], false)}row\n`);
+    await trips.savePerfRuns([{ at: 1, hz: 2 } as never]);
+    expect(await trips.loadPerfRuns()).toHaveLength(1);
+    expect(root.file(`trips/${base}.json`)).toBeDefined();
+    await trips.deleteTrip(base);
+    expect(await trips.listTrips()).toEqual([]);
+    expect(root.file(`trips/${base}.csv`)).toBeUndefined();
+  });
+
   it("stays unsupported when neither exists, or OPFS has no createWritable, or getDirectory fails", async () => {
     const a = await boot();
     expect(a.folder.useFolder.getState()).toMatchObject({ status: "unsupported", location: null });

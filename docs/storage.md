@@ -1,6 +1,6 @@
 # Folder storage: settings.json, scans, debug logs, History
 
-OBD Dash has no database. Settings, scan history, the Garage and debug logs are plain files in a **folder the user picks** (File System Access API, `showDirectoryPicker({ mode: "readwrite" })`). The only thing kept in the browser is the folder *handle*, in IndexedDB (`obd-dash-folder`, store `handle`, key `root`), so the user picks the folder once. No data goes there.
+OBD Dash has no database. Settings, scan history, trips, the Garage and debug logs are plain files in a **folder the user picks** (File System Access API, `showDirectoryPicker({ mode: "readwrite" })`). The only thing kept in the browser is the folder *handle*, in IndexedDB (`obd-dash-folder`, store `handle`, key `root`), so the user picks the folder once. No data goes there.
 
 Browsers with no folder picker (iOS/Bluefy, maybe Android Chrome) fall back to the **browser's private file system (OPFS)**, with the same files and the same API. See "Browser fallback" below.
 

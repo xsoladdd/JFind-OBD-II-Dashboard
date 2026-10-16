@@ -1,6 +1,6 @@
 # Diagnostics (`/diagnostics`)
 
-Reads trouble codes, the freeze frame, readiness monitors and the VIN, clears codes safely, exports a report and keeps a scan history on the device. Everything runs in the browser. Nothing is uploaded.
+Reads trouble codes, the freeze frame, readiness monitors and the VIN, clears codes safely, exports a report and saves every scan as a file in a folder the user picks. Everything runs in the browser. Nothing is uploaded.
 
 ## What one scan reads
 
@@ -31,7 +31,7 @@ Code: `lib/diagnostics/scan.ts` (`readScan`, `readFreezeFrame`, `clearCodes`), `
 3. `clearCodes` holds one polling pause for the whole flow:
    - It reads `010C` right before clearing. **RPM > 0 → blocked.** If RPM can't be read → blocked too, with the reason shown. `04` is never sent when blocked.
    - Otherwise it sends `04` (`clearDtcs`), then re-reads everything automatically.
-4. The result shows either success or "codes returned/persisting" (listing the stored/pending codes still present). Permanent codes still present are listed separately, as expected. The re-read is saved to history, flagged "after clear".
+4. The result shows either success or "codes returned/persisting" (listing the stored/pending codes still present). Permanent codes still present are listed separately, as expected. The run is saved as one `clear` file holding the codes before and the re-read after (flagged "after clear").
 
 In Demo mode the dialog has a **"Demo: simulated engine running"** checkbox, because the simulated engine never idles below 600 rpm. Untick it to put the simulated car at key ON / engine OFF.
 
@@ -72,9 +72,21 @@ The bit layout follows SAE J1979 Service 01 PID 01, as tabulated in Wikipedia's 
 
 Files download with an `<a download>` Blob link. Nothing leaves the device.
 
-## Scan history
+## Saved scans (folder storage)
 
-IndexedDB database `obd-dash-scans` (v1), object store `scans`, keyPath `at` (scan time in ms). Every live scan and every after-clear re-read is saved. The history list can open (read-only view), re-export (JSON/CSV) or delete a scan, and works offline without a connection. To print an old scan, open it first.
+Scans are plain files in a real folder the user picks. Folder storage itself (`lib/storage/folder.ts`, the `/history` page, linking and permissions) belongs to JOID-0006. Diagnostics only uses its contract: `useFolder` (status, folderName), `writeText`, `readText` and `listFiles`. There is no database.
+
+- **File name:** `scans/<YYYY-MM-DDTHH-mm-ssZ>_<VIN or NOVIN>.json`, UTC. The VIN is reduced to letters and digits. Two scans of the same car in the same second would share a name. Code: `lib/diagnostics/scanFile.ts`.
+- **File content:** it starts with `{ format: "obd-dash-scan", version: 1, takenAt, vin, kind }`.
+  - `kind: "read"` adds `scan`, one full scan.
+  - `kind: "clear"` adds `before` (the live scan the user cleared from) and `after` (the automatic re-read). A clear run writes only this one file.
+  - A blocked clear writes nothing.
+- **No folder:** if `useFolder` isn't `ready`, nothing is saved. The page shows "Choose a folder (History page) to save scans" (linking to `/history`), and the JSON / CSV / PDF downloads still work.
+- **Opening a scan:** `/diagnostics?scan=<file name>` (the `/history` page links here) reads `scans/<file name>` and renders it read-only. A clear run shows its re-read, with the "before" codes in a banner.
+  - Only a bare `*.json` name made of letters, digits, `_` and `-` is accepted, so the query can't reach outside `scans/`.
+  - The file is shape-checked (`parseScanFile`) before rendering, so a damaged or foreign file shows an error instead of breaking the page.
+  - The query is read in a small `Suspense`-wrapped component, so the rest of the page stays prerendered.
+- **Recent scans:** the 5 newest files from `listFiles("scans")`, with an "All scans" link to `/history`.
 
 ## Simulator additions
 
@@ -95,7 +107,9 @@ In the marked "Diagnostics (phase 2)" block of `lib/sim/elm327.ts` (demo data, n
 - readiness bits for spark, compression and multiple ECUs;
 - the freeze-frame decode;
 - the JSON and CSV export shapes;
-- DTC description lookup.
+- DTC description lookup;
+- scan file names, header order, the read/clear shapes and parser rejection;
+- the store end to end through the simulator: one file per read and per clear run, the recent list, opening by name, rejecting unsafe names, and skipping the save without a folder (`lib/store/diagnostics.test.ts`).
 
 ## Screenshots
 
@@ -103,12 +117,13 @@ Demo mode, `docs/screenshots/diagnostics/`:
 
 | | |
 | --- | --- |
-| Not connected (phone) | `not-connected-phone.png` |
-| Not connected + saved history (desktop) | `not-connected-history-desktop.png` |
-| Scan with freeze frame, readiness, history (phone) | `scan-freeze-frame-phone.png` |
-| Opened saved scan (desktop) | `history-scan-desktop.png` |
+| Not connected (phone / desktop) | `not-connected-phone.png`, `not-connected-desktop.png` |
+| Scan with freeze frame and readiness, no folder linked (phone) | `scan-no-folder-phone.png` |
 | Clear confirmation (phone / desktop) | `clear-confirm-phone.png`, `clear-confirm-desktop.png` |
 | Clear blocked, engine running (phone) | `clear-blocked-phone.png` |
 | Clear result (phone) | `clear-result-phone.png` |
-| After clear + history (phone) | `after-clear-history-phone.png` |
+| After clear: saved file + recent scans (phone) | `after-clear-saved-phone.png` |
+| Saved clear run opened via `?scan=` (desktop) | `saved-clear-run-desktop.png` |
 | Print / PDF report (desktop) | `print-report-desktop.png` |
+
+The "saved" screenshots use the throwaway in-memory `folder.ts` stub (folder name "Stub folder"). Under JOID-0006 the folder name is the real one.

@@ -4,7 +4,7 @@ A client-only web app for the JF327 (an ELM327-style Bluetooth LE OBD-II adapter
 
 **Status: phase 1.** This phase covers the transport and ELM layer, OBD decoding, a full ELM327 simulator and the connect screen with a raw debug console. The Diagnostics page (phase 2) and the dashboard themes (phase 3) are not built yet.
 
-**Diagnostics** (`/diagnostics`): codes, freeze frame, readiness, safe clear, export, scan history. See [docs/diagnostics.md](docs/diagnostics.md).
+**Diagnostics** (`/diagnostics`): codes, freeze frame, readiness, safe clear, export, scans saved to your folder. See [docs/diagnostics.md](docs/diagnostics.md).
 
 ## Setup
 

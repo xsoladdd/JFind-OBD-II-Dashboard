@@ -44,7 +44,7 @@ Calls are ref-counted, and `release()` is safe to call twice. Promotions survive
 
 ### Pausing: `lib/polling/pause.ts`
 
-Wrap any multi-command or state-changing ELM operation in `withPollingPaused(fn)`. The Scheduler finishes its in-flight read, waits until all holds are released, then resumes.
+Wrap any multi-command or state-changing ELM operation in `withPollingPaused(fn)`. `withPollingPaused` first waits for the Scheduler's in-flight custom-PID header group (ATSH, requests, restore) to finish, so `fn`'s first command never goes out on a custom header. A plain read is a single queued command and needs no wait. The Scheduler waits until all holds are released, then resumes.
 
 ## Scheduler (`lib/polling/Scheduler.ts`)
 

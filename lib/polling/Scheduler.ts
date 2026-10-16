@@ -4,7 +4,7 @@ import { cmdOf, PID_LIST } from "../obd/pids";
 import { readCmd } from "../obd/requests";
 import { discoverSupported } from "../obd/supported";
 import { ATRV } from "../store/live";
-import { usePollingPause } from "./pause";
+import { pollingSettled, trackPolling, usePollingPause } from "./pause";
 
 type Sender = { send: (cmd: string, opts?: { timeoutMs?: number }) => Promise<string[]> };
 export type Tier = "fast" | "medium" | "slow";
@@ -132,6 +132,7 @@ export class Scheduler {
 
   /** Runs until stop() or a disconnect. */
   async run() {
+    await pollingSettled(); // a previous Scheduler's header group (stop + restart) must restore before 0100
     await this.waitWhilePaused();
     if (this.stopped) return;
     let supported = new Set<string>();
@@ -149,6 +150,8 @@ export class Scheduler {
     while (!this.stopped) {
       await this.waitWhilePaused();
       if (this.stopped) break;
+      // No await between this check and the group starting, so a pause can't begin in between and miss it.
+      if (usePollingPause.getState().holds > 0) continue;
       const now = Date.now();
       const next = this.pick(now);
       if (typeof next === "number") {
@@ -158,7 +161,7 @@ export class Scheduler {
       this.last.set(next, now);
       const custom = this.custom.get(next);
       if (custom) {
-        if (await this.pollCustom(custom, now)) break;
+        if (await trackPolling(this.pollCustom(custom, now))) break;
         continue;
       }
       try {

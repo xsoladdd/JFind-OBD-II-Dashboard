@@ -75,6 +75,8 @@ Examples: `(A*256+B)/10-40`, `signed(A)*0.75`, `A>>4 & 0x0F`.
 
 To keep switches rare, the Scheduler reads a custom PID together with every other due (or fast) custom PID behind the same header: one `ATSH`, the requests, one restore.
 
+A pause (`withPollingPaused`) and a restarted Scheduler (`run()` after `stop()`) wait for the group in flight, restore included, before sending anything (`trackPolling` / `pollingSettled` in `lib/polling/pause.ts`). Before JOID-0015 that was a real bug: the client queue is FIFO, so a DTC scan's `03` or a new Scheduler's `0100` could be queued between `ATSH7E0` and the restore and go out on the custom header.
+
 ### Failures
 
 A custom PID that fails 3 times in a row (NO DATA, `?`, a negative `7F` reply, a reply without the prefix, a formula error) is dropped for the session with one warning toast, so a wrong definition can't slow down standard polling. Editing it gives it a new chance. Standard PIDs keep their own rule (dropped after 3 NO DATA).

@@ -100,9 +100,10 @@ describe("Scheduler", () => {
     const defs = [custom("c-a"), custom("c-b", { request: "225678", formula: "A" }), custom("c-c", { header: "", request: "225678", formula: "A" })];
     const { scheduler, sent, count } = await setup([], defs);
     running = scheduler;
-    void scheduler.run();
+    const done = scheduler.run();
     await wait(500);
     scheduler.stop();
+    await done; // the group in flight at stop() sends its restore before run() returns
     expect(scheduler.supported).toEqual(expect.arrayContaining(["c-a", "c-b", "c-c"]));
     for (const id of ["c-a", "c-b", "c-c"]) expect(count(id)).toBeGreaterThan(0);
     const switches = sent.flatMap((c, i) => (c === "ATSH7E0" ? [i] : []));
@@ -133,7 +134,7 @@ describe("Scheduler", () => {
   it("setCustom swaps definitions while running and retries an edited, dropped one", async () => {
     const { scheduler, count, sent } = await setup([], [custom("c-x", { header: "123", tier: "fast" })]);
     running = scheduler;
-    void scheduler.run();
+    const done = scheduler.run();
     await wait(200);
     expect(scheduler.polled).not.toContain("c-x");
     scheduler.setCustom([custom("c-x", { tier: "fast" })]); // fixed header
@@ -143,6 +144,45 @@ describe("Scheduler", () => {
     expect(scheduler.polled).not.toContain("c-x");
     expect(scheduler.supported).not.toContain("c-x");
     scheduler.stop();
+    await done;
     expect(sent.at(-1)).not.toBe("ATSH7E0");
+  });
+
+  it("a pause that starts mid-group waits for the restore before its own commands", async () => {
+    const { client, scheduler, sent } = await setup([], [custom("c-a"), custom("c-b", { request: "225678", formula: "A" })]);
+    running = scheduler;
+    let paused: Promise<string[]> | null = null;
+    const off = client.onTraffic((e) => {
+      if (e.dir !== "tx" || e.text !== "ATSH7E0" || paused) return;
+      paused = withPollingPaused(() => client.send("03")); // e.g. a DTC scan starting while a group is in flight
+    });
+    const done = scheduler.run();
+    while (!paused) await wait(5);
+    await paused;
+    off();
+    scheduler.stop();
+    await done;
+    const i = sent.indexOf("ATSH7E0");
+    expect(sent.slice(i + 1, i + 5)).toEqual(["221234", "225678", "ATSH7DF", "03"]);
+  });
+
+  it("a restarted Scheduler doesn't send its first command inside the old one's header group", async () => {
+    const { client, scheduler, sent } = await setup([], [custom("c-a"), custom("c-b", { request: "225678", formula: "A" })]);
+    running = scheduler;
+    const second = new Scheduler(client, { mediumMs: 60, slowMs: 250 });
+    let restarted: Promise<void> | null = null;
+    const off = client.onTraffic((e) => {
+      if (e.dir !== "tx" || e.text !== "ATSH7E0" || restarted) return;
+      scheduler.stop(); // consumers dropped to 0 and came back, e.g. a page change
+      restarted = second.run();
+    });
+    const done = scheduler.run();
+    while (!restarted) await wait(5);
+    off();
+    await wait(50);
+    second.stop();
+    await Promise.all([done, restarted]);
+    const i = sent.indexOf("ATSH7E0");
+    expect(sent.slice(i + 1, i + 5)).toEqual(["221234", "225678", "ATSH7DF", "0100"]);
   });
 });

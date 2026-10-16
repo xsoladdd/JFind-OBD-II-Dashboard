@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* A car app is dark by default: readable at night, no glare. */
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-zinc-950);
+  color: var(--color-zinc-100);
+}

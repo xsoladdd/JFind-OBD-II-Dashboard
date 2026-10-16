@@ -76,7 +76,7 @@ Files download with an `<a download>` Blob link. Nothing leaves the device.
 
 Scans are plain files in a real folder the user picks. Folder storage itself (`lib/storage/folder.ts`, the `/history` page, linking and permissions) belongs to JOID-0006. Diagnostics only uses its contract: `useFolder` (status, folderName), `writeText`, `readText` and `listFiles`. There is no database.
 
-- **File name:** `scans/<YYYY-MM-DDTHH-mm-ssZ>_<VIN or NOVIN>.json`, UTC. The VIN is reduced to letters and digits. Two scans of the same car in the same second would share a name. Code: `lib/diagnostics/scanFile.ts`.
+- **File name:** `scans/<YYYY-MM-DDTHH-mm-ssZ>_<VIN or NOVIN>.json`, UTC. The VIN is reduced to letters and digits. If that name already exists (two scans of the same car in one second, e.g. a fast Demo read then clear), the name moves on a second; the file is never overwritten, and `takenAt` inside stays exact. Code: `lib/diagnostics/scanFile.ts`.
 - **File content:** it starts with `{ format: "obd-dash-scan", version: 1, takenAt, vin, kind }`.
   - `kind: "read"` adds `scan`, one full scan.
   - `kind: "clear"` adds `before` (the live scan the user cleared from) and `after` (the automatic re-read). A clear run writes only this one file.

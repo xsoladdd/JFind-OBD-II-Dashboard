@@ -43,8 +43,11 @@ export const useDiagnostics = create<DiagnosticsState>((set, get) => {
   const save = async (file: ScanFile) => {
     set({ savedAs: "", saveError: "" });
     if (!folderReady()) return;
-    const name = scanFileName(Date.parse(file.takenAt), file.vin);
     try {
+      // Names have 1 s resolution; a fast Demo read + clear can share one. Bump the name, never overwrite.
+      let at = Date.parse(file.takenAt);
+      while ((await readText(`${SCAN_DIR}/${scanFileName(at, file.vin)}`)) !== null) at += 1000;
+      const name = scanFileName(at, file.vin);
       await writeText(`${SCAN_DIR}/${name}`, JSON.stringify(file, null, 2));
       set({ savedAs: name });
       await get().loadRecent();

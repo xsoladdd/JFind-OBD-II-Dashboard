@@ -7,7 +7,7 @@ export type ScanFile =
   | { format: "obd-dash-scan"; version: 1; takenAt: string; vin: string | null; kind: "read"; scan: Scan }
   | { format: "obd-dash-scan"; version: 1; takenAt: string; vin: string | null; kind: "clear"; before: Scan; after: Scan };
 
-// shortcut: two scans of the same car in the same second share a name (the later one wins); add ms if that ever matters.
+// 1 s resolution: the store bumps the name by a second rather than overwrite an existing file.
 export function scanFileName(at: number, vin: string | null): string {
   const stamp = new Date(at).toISOString().slice(0, 19).replace(/:/g, "-");
   return `${stamp}Z_${vin?.replace(/[^A-Za-z0-9]/g, "") || "NOVIN"}.json`;

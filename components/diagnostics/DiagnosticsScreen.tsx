@@ -18,7 +18,7 @@ import { Readiness } from "./Readiness";
 const CARD = "rounded-lg border border-zinc-800 bg-zinc-900 p-4";
 const when = (at: number) => new Date(at).toLocaleString();
 
-/** There is no app shell yet, so the page can connect by itself (same store as the Connect screen). */
+/** Lets a deep link (e.g. from /history) connect in place; same store as the Connect screen. */
 function ConnectPrompt() {
   const hasBt = useHasBluetooth();
   const { status, error, connect } = useConnection();

@@ -5,7 +5,7 @@ describe("splitNav", () => {
   it("keeps primary entries in NAV order and puts the rest under More", () => {
     const { primary, more } = splitNav();
     expect(primary.map((n) => n.label)).toEqual(["Dashboard", "Diagnostics", "Garage", "Trips"]);
-    expect(more.map((n) => n.label)).toEqual(["Connect", "ECU", "Alerts", "History"]);
+    expect(more.map((n) => n.label)).toEqual(["Connect", "ECU", "Alerts", "History", "PIDs"]);
   });
 
   it("never drops or duplicates an entry", () => {

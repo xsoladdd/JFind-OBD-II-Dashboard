@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, type ReactNode } from "react";
+import { AlertIndicator } from "@/components/alerts/AlertIndicator";
 import { watchConnection } from "@/lib/store/toasts";
 import { ConnectionChip } from "./ConnectionChip";
 import { NavLinks } from "./NavLinks";
@@ -27,6 +28,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="ml-auto min-w-0">
           <ConnectionChip />
         </div>
+        <AlertIndicator />
       </header>
       <div className="flex flex-1">
         <nav aria-label="Main" className="hidden w-48 shrink-0 border-r border-zinc-800 p-3 md:block">

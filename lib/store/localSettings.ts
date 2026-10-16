@@ -6,11 +6,17 @@ import { useCallback, useSyncExternalStore } from "react";
  */
 const PREFIX = "obd-dash.setting.";
 const listeners = new Set<() => void>();
+const parsed = new Map<string, { raw: string; value: unknown }>(); // same raw string → same object, so useSetting can hold arrays/objects
 
 export function getSetting<T>(key: string, fallback: T): T {
   try {
     const raw = globalThis.localStorage?.getItem(PREFIX + key);
-    return raw === null || raw === undefined ? fallback : (JSON.parse(raw) as T);
+    if (raw === null || raw === undefined) return fallback;
+    const hit = parsed.get(key);
+    if (hit?.raw === raw) return hit.value as T;
+    const value = JSON.parse(raw) as T;
+    parsed.set(key, { raw, value });
+    return value;
   } catch {
     return fallback; // no storage (SSR, private mode) or a corrupt value
   }
@@ -27,7 +33,7 @@ export function setSetting<T>(key: string, value: T) {
 
 const subscribe = (l: () => void) => (listeners.add(l), () => void listeners.delete(l));
 
-/** [value, set]. Renders the fallback on the server and during hydration, then the stored value. Primitives only. */
+/** [value, set]. Renders the fallback on the server and during hydration, then the stored value. Pass a module-level constant as an object fallback. */
 export function useSetting<T>(key: string, fallback: T): [T, (v: T) => void] {
   const value = useSyncExternalStore(subscribe, () => getSetting(key, fallback), () => fallback);
   return [value, useCallback((v: T) => setSetting(key, v), [key])];

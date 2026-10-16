@@ -68,6 +68,8 @@ Each persisted setting has its own hook in `lib/store/settings.ts`, which return
 | `useTheme()` | `dashboard.theme` | `"classic"` |
 | `useRedline()` | `dashboard.redlineRpm` | `6500` |
 | `useHudMirror()` | `dashboard.hudMirror` | `false` |
+| `useCustomLayouts()` | `dashboard.customLayouts` | `{ active: "", layouts: [] }` |
+| `useAlertRules()` | `alerts.rules` | `[]` |
 
 For now they're backed by `lib/store/localSettings.ts`, a localStorage stand-in with the same `getSetting` / `setSetting` / `useSetting` signatures as JOID-0006's `lib/storage/settings.ts` (settings.json in a folder the user picks). Switching is the one import line in `lib/store/settings.ts`; after that, delete the stand-in.
 
@@ -94,6 +96,7 @@ This covers km/h, km, °C, kPa, L, L/h and L/100km (to US mpg, US gallons). Unit
 | Minimal | A card for every polled value, with a 60 s sparkline. |
 | Engineer | A table of every polled PID with live, min, max and avg. A chart of up to 4 ticked PIDs, each drawn as a % of its own display range so they share one axis, with a hover tooltip showing real values. **Record** saves the session as CSV (`time_iso,elapsed_s,pid,name,value,unit`, raw metric units). |
 | HUD | Huge speed, an RPM bar and coolant. **Mirror** flips it for windshield reflection. **Full screen** uses the Fullscreen API, and falls back to a full-window overlay where that's missing (iPhone). |
+| Custom | Your own layouts of dial, number, bar and sparkline widgets. See [custom-dashboard-and-alerts.md](custom-dashboard-and-alerts.md). |
 
 Warning thresholds are in `lib/dashboard/zones.ts`. They are general guidance, not from a standard: coolant hot at ≥ 110 °C and fuel low at ≤ 12 %. Redline is a per-car setting (default 6500 rpm, a placeholder).
 

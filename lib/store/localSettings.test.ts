@@ -16,3 +16,17 @@ describe("localSettings stand-in", () => {
     expect(getSetting("units", "metric")).toBe("metric");
   });
 });
+
+describe("localSettings objects", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("returns the same object until the stored value changes (stable useSyncExternalStore snapshots)", () => {
+    const data = new Map<string, string>();
+    vi.stubGlobal("localStorage", { getItem: (k: string) => data.get(k) ?? null, setItem: (k: string, v: string) => data.set(k, v) });
+    setSetting("x.list", [1, 2]);
+    const a = getSetting<number[]>("x.list", []);
+    expect(getSetting<number[]>("x.list", [])).toBe(a);
+    setSetting("x.list", [1, 2, 3]);
+    expect(getSetting<number[]>("x.list", [])).toEqual([1, 2, 3]);
+  });
+});

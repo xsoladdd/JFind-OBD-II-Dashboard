@@ -8,6 +8,7 @@ import { useLive } from "@/lib/store/live";
 import { useRedline, useTheme, useUnits, type ThemeId } from "@/lib/store/settings";
 import { useMounted } from "../connect/hooks";
 import { Classic } from "./themes/Classic";
+import { Custom } from "./themes/Custom";
 import { Engineer } from "./themes/Engineer";
 import { Hud } from "./themes/Hud";
 import { Minimal } from "./themes/Minimal";
@@ -20,6 +21,7 @@ const THEMES: { id: ThemeId; label: string; view: () => React.ReactNode }[] = [
   { id: "minimal", label: "Minimal", view: Minimal },
   { id: "engineer", label: "Engineer", view: Engineer },
   { id: "hud", label: "HUD", view: Hud },
+  { id: "custom", label: "Custom", view: Custom },
 ];
 
 function NotConnected() {

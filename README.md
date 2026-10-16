@@ -71,6 +71,7 @@ Garage (car profiles, service log, reminders): see [docs/garage.md](docs/garage.
 Live dashboard, polling Scheduler and live-data API: see [docs/dashboard.md](docs/dashboard.md).
 
 Advanced diagnostics (`/ecu`: Mode 06, codes per module, Mode 09, battery test): see [docs/ecu.md](docs/ecu.md).
+Custom dashboard builder and alerts (`/alerts`): see [docs/custom-dashboard-and-alerts.md](docs/custom-dashboard-and-alerts.md).
 
 ## [verify] list
 
@@ -104,6 +105,8 @@ Things I couldn't confirm without the hardware or an authoritative source:
 - [ ] **Multi-ECU 0101**: MIL, DTC count and readiness are combined across all ECUs that answer (MIL ORed, counts summed, incomplete wins). Check against a car where the engine and transmission ECUs both reply.
 - [ ] **Readiness bit C4 (spark)**: labelled "Gasoline particulate filter" per the current J1979 table on Wikipedia. Older J1979 revisions may name it differently.
 - [ ] **RPM with the engine off**: clearing needs `010C` to read exactly 0. If an ECU answers NO DATA with the engine off, clearing stays blocked. Confirm on real cars.
+- [ ] **Alert examples**: every number in the example rules is a placeholder to adjust per car: coolant above 110 °C (hysteresis 3 °C, 5 s), adapter voltage below 12.0 V (0.3 V, 10 s), RPM above the redline setting (300 rpm, 0 s).
+- [ ] **Alert sound and vibration on phones**: check that the beep plays after the Connect tap on Android Chrome and on iOS (Bluefy), and that it vibrates on Android. iOS has no Vibration API.
 
 ## Phase 2 / 3 (not built yet)
 

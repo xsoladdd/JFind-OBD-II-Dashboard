@@ -25,6 +25,12 @@ export function toReport(scan: Scan) {
   };
 }
 
+/** Distinct codes across stored, pending and permanent: the page's "is anything wrong?" answer. null = no list could be read. */
+export function codeCount(scan: Pick<Scan, "stored" | "pending" | "permanent">): number | null {
+  const lists = [scan.stored, scan.pending, scan.permanent];
+  return lists.every((l) => l === null) ? null : new Set(lists.flatMap((l) => l ?? [])).size;
+}
+
 export const toJson = (scan: Scan) => JSON.stringify(toReport(scan), null, 2);
 
 export const cell = (v: unknown) => {

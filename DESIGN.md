@@ -237,6 +237,19 @@ From JOID-0016 (driving):
 - **Theme and units in the Menu sheet are one tap** once the sheet is open: opening the sheet is the deliberate first
   step (§12 rule 5).
 
+From JOID-0017 (Diagnostics, code history, ECU, History):
+
+- **Print report is black on white** (`text-black`, `bg-white`, `border-black/30`): it is paper output, shown only by
+  `window.print()`, never on screen.
+- **ClearDialog is its own `<dialog>`, not a `Sheet`**: it must refuse Escape while clearing is in progress, which
+  `Sheet` doesn't offer. It uses the sheet's surface, border and backdrop.
+- **Code type, History tab and opened disclosures aren't in the URL**: the same reasoning as above; a saved scan does
+  deep-link (`/diagnostics?scan=<file>`).
+- **Code-type segments squeeze to 3 columns** on the Diagnostics page (`grid-cols-3!`, `[&>button]:px-1`) so Stored,
+  Pending and Permanent stay on one row at 390px; they keep the 72px height.
+- **Delete in History still uses `confirm()`**, as before: the file sheet is the deliberate first step and the
+  browser's confirmation the second.
+
 ## 12. Driving
 
 OBD Dash is mostly used on a phone in a mount at arm's length, in portrait or landscape. Where a screen can be used
@@ -306,12 +319,13 @@ Starting points for the pages still to restyle. These are suggestions to confirm
 
 | Page | Goes first | Behind a button or sheet | Locked while driving (already done) |
 | --- | --- | --- | --- |
-| Diagnostics | Code count as a word ("No codes", "2 codes") and Scan | Export, report, readiness detail, code history | Code details, the clear dialog (also RPM-blocked) |
+| Diagnostics (done) | Code count as a word ("No codes", "3 codes"), the check-engine light, one 72px Read codes | Readiness, export and report, saved scans, code history, scan details (disclosures) | Freeze frame, code history, Clear codes (also RPM-blocked) |
 | Trips | The current trip (time, distance) and the performance timer's state | Trip settings, replay, dyno inputs | (none yet; lock trip edits and dyno setup) |
 | Garage | The active car and its next due reminder | Car switcher, backup and import | Car, service and reminder forms (done) |
-| ECU | Adapter voltage | Per-ECU details, info | Mode 06 table, battery test (done) |
+| ECU (done) | Adapter voltage | Each test in its own disclosure, its last result in the summary | All four tests (Mode 06, per module, vehicle info, battery) |
 | Alerts | Firing alerts with Mute | Examples, rule list | Rule editor (done) |
-| History, PIDs | Parking-only pages: no driving-first item | | Log viewer, PID editor and list (done) |
+| History (done) | Folder status, then scans or logs newest first | A file's actions and log viewer in a sheet | Log viewer |
+| PIDs | Parking-only page: no driving-first item | | PID editor and list (done) |
 
 **Worked example: the Dashboard.**
 1. First: the gauges, and nothing else. In the Drive layout that is speed as the hero, RPM as a full-width bar

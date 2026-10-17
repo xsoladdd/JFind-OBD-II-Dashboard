@@ -5,7 +5,7 @@ import { usePollingPause } from "../polling/pause";
 import { SIM_DTCS, SIM_VIN } from "../sim/elm327";
 import { SimulatorTransport } from "../transport/SimulatorTransport";
 import { combineStatus, decodeMonitorStatus } from "./readiness";
-import { toCsv, toJson, toReport } from "./report";
+import { codeCount, toCsv, toJson, toReport } from "./report";
 import { clearCodes, decodeFreezeValue, readScan, type Scan } from "./scan";
 import { clearFile, parseScanFile, readFile, scanFileName } from "./scanFile";
 
@@ -153,6 +153,15 @@ describe("scan through the simulator", () => {
     expect(scan.pending).toBeNull();
     expect(scan.stored).toEqual(SIM_DTCS.stored);
     expect(scan.errors).toEqual(["Pending codes (07): 07: TIMEOUT"]);
+  });
+});
+
+describe("code count", () => {
+  it("counts each code once across the lists and skips lists that failed", () => {
+    expect(codeCount({ stored: ["P0300", "P0420"], pending: ["P0300"], permanent: ["P0420"] })).toBe(2);
+    expect(codeCount({ stored: [], pending: null, permanent: ["P0171"] })).toBe(1);
+    expect(codeCount({ stored: [], pending: [], permanent: [] })).toBe(0);
+    expect(codeCount({ stored: null, pending: null, permanent: null })).toBeNull();
   });
 });
 

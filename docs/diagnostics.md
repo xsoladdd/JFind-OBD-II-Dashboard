@@ -20,7 +20,7 @@ Code: `lib/diagnostics/scan.ts` (`readScan`, `readFreezeFrame`, `clearCodes`), `
 
 ## Clearing codes (Mode 04)
 
-1. **Clear codes…** is enabled only after a live read in this session.
+1. **Clear codes…** (at the bottom of the page, parked only) is enabled only after a live read in this session.
 2. A confirmation dialog explains:
    - clearing erases stored and pending codes and their freeze-frame data;
    - it turns off the check-engine light;
@@ -33,7 +33,7 @@ Code: `lib/diagnostics/scan.ts` (`readScan`, `readFreezeFrame`, `clearCodes`), `
    - Otherwise it sends `04` (`clearDtcs`), then re-reads everything automatically.
 4. The result shows either success or "codes returned/persisting" (listing the stored/pending codes still present). Permanent codes still present are listed separately, as expected. The run is saved as one `clear` file holding the codes before and the re-read after (flagged "after clear").
 
-In Demo mode the dialog has a **"Demo: simulated engine running"** checkbox, because the simulated engine never idles below 600 rpm. Untick it to put the simulated car at key ON / engine OFF.
+In Demo mode the dialog has a **"Demo: simulated engine running"** switch, because the simulated engine never idles below 600 rpm. Switch it off to put the simulated car at key ON / engine OFF.
 
 ## Readiness monitors
 
@@ -111,19 +111,23 @@ In the marked "Diagnostics (phase 2)" block of `lib/sim/elm327.ts` (demo data, n
 - scan file names, header order, the read/clear shapes and parser rejection;
 - the store end to end through the simulator: one file per read and per clear run, the recent list, opening by name, rejecting unsafe names, and skipping the save without a folder (`lib/store/diagnostics.test.ts`).
 
+## Page layout (driving)
+
+Restructured for use in the car (DESIGN.md §12, JOID-0017):
+
+1. **The answer first**: the code count as a word ("No codes", "3 codes", distinct codes across the three lists,
+   `codeCount` in `lib/diagnostics/report.ts`), the check-engine light as a word, the count per list, and one 72px
+   **Read codes**. Read errors show right there.
+2. **The codes**: Stored / Pending / Permanent as a 72px segmented control and the list. Tapping a code shows its
+   freeze frame, which is parked-only (`StoppedOnly`).
+3. **Behind disclosures**: Readiness (its summary says "5 of 7 complete"), Export and report, Saved scans, Code
+   history (its list is parked-only), Scan details (VIN, time, 0101 count).
+4. **Clear codes** last, parked-only, and still behind the confirmation dialog and the RPM check.
+
+Landscape phones put the answer and the codes side by side.
+
 ## Screenshots
 
-Demo mode, `docs/screenshots/diagnostics/`:
-
-| | |
-| --- | --- |
-| Not connected (phone / desktop) | `not-connected-phone.png`, `not-connected-desktop.png` |
-| Scan with freeze frame and readiness, no folder linked (phone) | `scan-no-folder-phone.png` |
-| Clear confirmation (phone / desktop) | `clear-confirm-phone.png`, `clear-confirm-desktop.png` |
-| Clear blocked, engine running (phone) | `clear-blocked-phone.png` |
-| Clear result (phone) | `clear-result-phone.png` |
-| After clear: saved file + recent scans (phone) | `after-clear-saved-phone.png` |
-| Saved clear run opened via `?scan=` (desktop) | `saved-clear-run-desktop.png` |
-| Print / PDF report (desktop) | `print-report-desktop.png` |
-
-The "saved" screenshots use the throwaway in-memory `folder.ts` stub (folder name "Stub folder"). Under JOID-0006 the folder name is the real one.
+Demo mode, `docs/screenshots/redesign/diagnostics/`, at 390×844 (`-phone`), 844×390 (`-landscape`) and 1280×800
+(`-desktop`). `moving` shots are taken while the demo car drives, `parked` ones with Hold parked on. The saved-scan
+shots use the browser-folder fallback.

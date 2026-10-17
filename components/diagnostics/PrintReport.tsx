@@ -13,7 +13,7 @@ const PRINT_CSS = `@media print {
 }`;
 
 const TH = "border-b border-black py-1 pr-3 text-left";
-const TD = "border-b border-zinc-300 py-1 pr-3 align-top";
+const TD = "border-b border-black/30 py-1 pr-3 align-top";
 
 /** The report for window.print() ("Save as PDF"): every section, black on white, hidden on screen. */
 export function PrintReport({ scan }: { scan: Scan }) {
@@ -59,7 +59,7 @@ export function PrintReport({ scan }: { scan: Scan }) {
         <section key={title} className="mt-4 break-inside-avoid">
           <h2 className="font-bold">{title}</h2>
           {codes === null ? (
-            <p>Couldn&apos;t be read.</p>
+            <p>Couldn’t be read.</p>
           ) : codes.length === 0 ? (
             <p>None.</p>
           ) : (

@@ -1,6 +1,6 @@
 # Advanced diagnostics (`/ecu`)
 
-`/ecu` has four cards: Mode 06 monitor tests, codes per control module, Mode 09 vehicle info, and a battery and charging test. Every read runs inside `withPollingPaused` (`lib/polling/pause.ts`). Only one read runs at a time (`useEcu().busy`), so header mode can never interleave with another query. There is no IndexedDB.
+`/ecu` shows the live adapter voltage (ATRV) on top, then four tests, each in its own collapsed section with its last result in the summary ("Not run", "1 failed", "3 modules"...): Mode 06 monitor tests, codes per control module, Mode 09 vehicle info, and a battery and charging test. The tests are parked-only (`StoppedOnly`, DESIGN.md §12). Screenshots: `docs/screenshots/redesign/ecu/`. Every read runs inside `withPollingPaused` (`lib/polling/pause.ts`). Only one read runs at a time (`useEcu().busy`), so header mode can never interleave with another query. There is no IndexedDB.
 
 | Code | What |
 | --- | --- |

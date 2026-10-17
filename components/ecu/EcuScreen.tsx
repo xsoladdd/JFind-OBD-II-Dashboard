@@ -1,58 +1,61 @@
 "use client";
 
 import Link from "next/link";
-import { StoppedOnly } from "@/components/ui";
+import { Button, buttonClass, cx, linkClass, Panel, Stat } from "@/components/ui";
+import { usePolling } from "@/lib/polling";
 import { useConnection } from "@/lib/store/connection";
 import { BatteryCard } from "./BatteryCard";
 import { InfoCard } from "./InfoCard";
 import { Mode06Card } from "./Mode06Card";
 import { PerEcuCard } from "./PerEcuCard";
 
+/** Top: the adapter voltage. Below: one collapsed section per test, its last result in the summary (parked-only inside). */
 export function EcuScreen() {
-  const { status, mode, connect } = useConnection();
+  usePolling(); // keeps ATRV coming in, so the voltage below stays live
+  const { status, mode, connect, voltage, refreshVoltage } = useConnection();
+  const busy = status === "connecting" || status === "reconnecting";
 
   return (
-    <main className="mx-auto w-full max-w-2xl space-y-4 px-4 py-6">
-      <header>
-        <h1 className="text-2xl font-bold">Advanced diagnostics</h1>
-        <p className="text-sm text-zinc-400">
-          Monitor tests, codes per module, vehicle info and a battery check. For standard code reads, freeze frame and
-          clearing, see{" "}
-          <Link href="/diagnostics" className="text-sky-300 underline">
-            Diagnostics
-          </Link>
-          .{mode === "demo" && " Demo mode: all values come from the simulator."}
-        </p>
-      </header>
+    <main className="mx-auto w-full max-w-6xl px-4 py-6 md:px-6 md:py-8 short:py-4">
+      <h1 className="mb-5 text-3xl font-bold tracking-tight short:mb-3 short:text-2xl">Advanced diagnostics</h1>
 
       {status !== "connected" ? (
-        <section className="rounded-lg border border-zinc-800 bg-zinc-900 p-4 text-sm">
-          <p>{status === "connecting" || status === "reconnecting" ? "Connecting…" : "Not connected to an adapter."}</p>
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-            <Link href="/" className="rounded-md bg-sky-600 px-5 py-3 text-center font-semibold hover:bg-sky-500">
+        <Panel aria-live="polite" className="max-w-xl">
+          <h2 className="text-balance text-5xl font-bold tracking-tight">{busy ? "Connecting…" : "Not connected"}</h2>
+          <div className="mt-5 grid gap-4">
+            <Link href="/" className={buttonClass("primary", "drive")}>
               Connect
             </Link>
-            <button
-              onClick={() => void connect("demo")}
-              disabled={status === "connecting"}
-              className="rounded-md border border-zinc-600 px-5 py-3 font-semibold hover:bg-zinc-800 disabled:opacity-40"
-            >
+            <Button size="drive" onClick={() => void connect("demo")} disabled={status === "connecting"}>
               Demo mode
-            </button>
+            </Button>
           </div>
-        </section>
+        </Panel>
       ) : (
-        <>
-          <StoppedOnly label="Mode 06 monitor tests">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-start short:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] short:items-start">
+          <Panel>
+            <Stat label="Adapter voltage" value={voltage.replace(/\s*V$/i, "")} unit="V" size="xl" />
+            <Button variant="ghost" size="sm" className="-ml-4 mt-2" onClick={() => void refreshVoltage()}>
+              Refresh
+            </Button>
+          </Panel>
+          <div className="space-y-4">
             <Mode06Card />
-          </StoppedOnly>
-          <PerEcuCard />
-          <InfoCard />
-          <StoppedOnly label="Battery and charging test">
+            <PerEcuCard />
+            <InfoCard />
             <BatteryCard />
-          </StoppedOnly>
-        </>
+          </div>
+        </div>
       )}
+
+      <p className="mt-6 max-w-2xl text-fg-muted">
+        Monitor tests, codes per module, vehicle info and a battery check. For standard code reads, freeze frame and clearing,
+        see{" "}
+        <Link href="/diagnostics" className={cx(linkClass, "inline-flex min-h-11 items-center")}>
+          Diagnostics
+        </Link>
+        .{mode === "demo" && " Demo mode: all values come from the simulator."}
+      </p>
     </main>
   );
 }

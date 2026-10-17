@@ -22,7 +22,7 @@ One row per code and car: the code, its description (`describeDtc`), first and l
 ## Code
 
 - `lib/diagnostics/history.ts`: `buildHistory` and `historyCsv` (pure), `loadScanFiles` (reads `scans/` with up to 8 reads in flight and a cache keyed by file name, size and `lastModified`; cache entries for deleted files are dropped). `lib/storage/folder.ts` runs file operations one at a time, so the cache is what keeps a few hundred scans fast, not the parallelism.
-- `lib/store/codeHistory.ts`: the Zustand store. `components/diagnostics/CodeHistory.tsx`: the card, reloaded when the folder status changes or a scan is saved.
+- `lib/store/codeHistory.ts`: the Zustand store. `components/diagnostics/CodeHistory.tsx`: the "Code history" disclosure on the Diagnostics page (its list is parked-only), reloaded when the folder status changes or a scan is saved.
 
 ## Demo mode
 
@@ -32,4 +32,4 @@ One row per code and car: the code, its description (`describeDtc`), first and l
 
 `lib/diagnostics/history.test.ts`: timeline, clears, came back, gone and unknown, VIN grouping, malformed files, cache, 300 files, CSV, and a read → clear → read series through the simulator.
 
-Screenshots: `docs/screenshots/code-history/`.
+Screenshots: `docs/screenshots/redesign/code-history/` (moving: locked; parked: the list and an opened code).

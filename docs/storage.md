@@ -80,14 +80,17 @@ Setting keys: `ble.uuids`, `garage.activeId`, `units`, `dashboard.theme`, `dashb
 
 ## History page (`/history`)
 
-- **Every file has a Download button** (scans and logs). History lists `scans/` and `logs/` only: `garage/garage.json` isn't listed and can't be deleted from here.
-- **Scans**: date, VIN and kind (read or clear) from each file's first fields (`format`, `version`, `takenAt`, `vin`, `kind`), newest first. Each links to `/diagnostics?scan=<file name>`, which Diagnostics renders. Files that aren't readable scans are listed so they can be deleted.
-- **Debug logs**: size and last write. **View** shows the raw text inline, **Download** saves it.
+Restructured for the car (DESIGN.md §12, JOID-0017): the folder status first, then **Scans / Debug logs** as one list,
+newest first. Tapping a file opens a sheet with its actions. History lists `scans/` and `logs/` only:
+`garage/garage.json` isn't listed and can't be deleted from here.
+
+- **Scans**: date, VIN and kind (read or clear) from each file's first fields (`format`, `version`, `takenAt`, `vin`, `kind`). The sheet has **Open in Diagnostics** (`/diagnostics?scan=<file name>`), **Download** and **Delete**. Files that aren't readable scans are listed so they can be deleted.
+- **Debug logs**: size and last write. The sheet has **View log** (the raw text, parked-only), **Download** and **Delete**.
 - **Delete** asks for confirmation.
 
 ## Screenshots
 
-`docs/screenshots/storage/`: Demo mode, at 390px and desktop width. `connect-browser-*` and `history-browser-*` show the browser fallback (a Chromium with `showDirectoryPicker` removed by an init script).
+`docs/screenshots/storage/`: Demo mode, at 390px and desktop width. `connect-browser-*` show the browser fallback (a Chromium with `showDirectoryPicker` removed by an init script). The History page's are in `docs/screenshots/redesign/history/`.
 
 ## Not covered
 

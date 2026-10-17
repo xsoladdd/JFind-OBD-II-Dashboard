@@ -97,7 +97,7 @@ function PidForm({ draft, onDone }: { draft: Draft; onDone: () => void }) {
   const problem = validateCustomPid(pid);
   const field = (label: string, key: "name" | "unit" | "request" | "header" | "prefix" | "formula" | "min" | "max", extra: React.InputHTMLAttributes<HTMLInputElement> = {}, hint?: string) => (
     <Field label={label} hint={hint}>
-      <Input className={cx(["request", "header", "prefix", "formula"].includes(key) && "font-mono")} value={d[key]} onChange={(e) => set({ [key]: e.currentTarget.value })} {...extra} />
+      <Input name={key} autoComplete="off" className={cx(["request", "header", "prefix", "formula"].includes(key) && "font-mono")} value={d[key]} onChange={(e) => set({ [key]: e.currentTarget.value })} {...extra} />
     </Field>
   );
 
@@ -122,14 +122,14 @@ function PidForm({ draft, onDone }: { draft: Draft; onDone: () => void }) {
           {field("Min", "min", { inputMode: "decimal" })}
           {field("Max", "max", { inputMode: "decimal" })}
           <Field label="Gauge">
-            <Select value={d.gauge} onChange={(e) => set({ gauge: e.currentTarget.value as GaugeType })}>
+            <Select name="gauge" value={d.gauge} onChange={(e) => set({ gauge: e.currentTarget.value as GaugeType })}>
               <option value="dial">Dial</option>
               <option value="bar">Bar</option>
               <option value="number">Number</option>
             </Select>
           </Field>
           <Field label="Polling">
-            <Select value={d.tier} onChange={(e) => set({ tier: e.currentTarget.value as Tier })}>
+            <Select name="polling" value={d.tier} onChange={(e) => set({ tier: e.currentTarget.value as Tier })}>
               <option value="fast">Fast (back-to-back)</option>
               <option value="medium">Medium (every 3 s)</option>
               <option value="slow">Slow (every 30 s)</option>
@@ -179,7 +179,7 @@ export function PidsPage() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 md:px-6 md:py-8 short:py-4">
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 md:px-6 md:py-8 short:py-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-bold tracking-tight short:text-2xl">PIDs</h1>
         <Button
@@ -211,7 +211,7 @@ export function PidsPage() {
                 <li key={p.id} className="py-3">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <Switch
-                      className="min-w-0 flex-1 basis-full sm:basis-auto"
+                      className="min-w-0 flex-1 basis-full sm:basis-0"
                       checked={p.enabled}
                       onChange={(enabled) => save(list.map((x) => (x.id === p.id ? { ...x, enabled } : x)))}
                       label={
@@ -226,7 +226,7 @@ export function PidsPage() {
                         </span>
                       }
                     />
-                    <div className="flex gap-1">
+                    <div className="ml-auto flex gap-1">
                       <Button variant="ghost" size="sm" disabled={!test.connected || test.busy} onClick={() => void test.run(p)}>
                         Test once
                       </Button>
@@ -237,7 +237,7 @@ export function PidsPage() {
                         variant="ghost"
                         size="sm"
                         className="text-danger-fg"
-                        onClick={() => confirm(`Delete the custom PID "${p.name}"?`) && save(list.filter((x) => x.id !== p.id))}
+                        onClick={() => confirm(`Delete the custom PID “${p.name}”?`) && save(list.filter((x) => x.id !== p.id))}
                       >
                         Delete
                       </Button>

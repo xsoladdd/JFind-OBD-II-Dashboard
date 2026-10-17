@@ -2,7 +2,11 @@
 
 `/garage`: car profiles, a per-car service log, maintenance reminders and a JSON backup. The whole Garage is **one file, `garage/garage.json`**, in the storage folder (see [storage.md](storage.md)): a real folder where the browser has a folder picker, otherwise the browser's private storage. There is no database. Nothing is sent anywhere, and reminders are in-app only (no push).
 
-Screenshots: `docs/screenshots/garage/` (phone 390px and desktop).
+Screenshots: `docs/screenshots/redesign/garage/` (390x844, 844x390 and 1280x800, parked and moving).
+
+Layout (DESIGN.md §12): the active car first (odometer and the next due reminder, most urgent first), then reminders;
+the car switcher is a sheet ("Cars"), the service log and backup are disclosures, and every form is locked while
+moving.
 
 ## `useGarage` (`lib/store/garage.ts`): the API other features use
 
@@ -40,7 +44,7 @@ Due by date and/or odometer; the worse of the two wins. The odometer used is the
 
 These windows are app defaults, not manufacturer intervals, and no service intervals are prefilled. [verify] with the owner that these windows are what they want.
 
-**Nav badge.** `lib/nav.ts` entries have no badge field, so `components/shell/NavLinks.tsx` renders `components/garage/GarageNavBadge.tsx` (the overdue + due-soon count) for `/garage`: beside the label in the sidebar, and in the tab's top-right corner on phones (beside the label it was cut off by the tab's `truncate`). Screenshots: `docs/screenshots/garage/nav-badge-*.png`.
+**Nav badge.** `lib/nav.ts` entries have no badge field, so `components/shell/NavLinks.tsx` renders `components/garage/GarageNavBadge.tsx` (the overdue + due-soon count) for `/garage`: beside the label in the sidebar, and in the tab's top-right corner on phones (beside the label it was cut off by the tab's `truncate`). Screenshots: the badge shows in `docs/screenshots/redesign/garage/garage-parked-phone.png` and `-desktop.png`.
 
 ## Odometer from the car
 

@@ -54,4 +54,9 @@ The 6th dashboard theme lets you build your own layouts.
   The chip opens **Acknowledge** and **Mute 5/15/60 min**. Mute silences the toast, sound and vibration, but the chip still shows the alert.
 - **Audio unlock**: browsers block audio until the user interacts with the page, so the shell arms the `AudioContext` on the first tap or key press (the Connect or Demo tap counts). Without that, alerts are silent but still show.
 
-Screenshots: `docs/screenshots/custom-dashboard/` and `docs/screenshots/alerts/`.
+Screenshots: `docs/screenshots/custom-dashboard/`, `docs/screenshots/alerts/` (the header chip) and `docs/screenshots/redesign/alerts/`
+(the page).
+
+`/alerts` layout (DESIGN.md §12): a firing alert shows the Dashboard's danger banner with one 72px Mute; otherwise "No
+alerts firing" or "Muted" in big type. Then 72px Mute 5/15/60 min (or Unmute). The rule list, the editor and the
+examples are locked while moving.

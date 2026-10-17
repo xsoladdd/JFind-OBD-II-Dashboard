@@ -77,7 +77,7 @@ function RuleForm({ draft, onDone, ids }: { draft: Draft; onDone: () => void; id
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Value" className="sm:col-span-2">
-            <Select value={d.pid} onChange={(e) => set({ pid: e.currentTarget.value })}>
+            <Select name="value" value={d.pid} onChange={(e) => set({ pid: e.currentTarget.value })}>
               {(ids.includes(d.pid) ? ids : [d.pid, ...ids]).map((id) => (
                 <option key={id} value={id}>
                   {liveDef(id)?.name ?? id}
@@ -86,19 +86,19 @@ function RuleForm({ draft, onDone, ids }: { draft: Draft; onDone: () => void; id
             </Select>
           </Field>
           <Field label="When it goes">
-            <Select value={d.op} onChange={(e) => set({ op: e.currentTarget.value as AlertRule["op"] })}>
+            <Select name="when-it-goes" value={d.op} onChange={(e) => set({ op: e.currentTarget.value as AlertRule["op"] })}>
               <option value="above">Above</option>
               <option value="below">Below</option>
             </Select>
           </Field>
           <Field label={`Threshold (${shown})`}>
-            <Input inputMode="decimal" required value={d.threshold} onChange={(e) => set({ threshold: e.currentTarget.value })} />
+            <Input name="threshold" autoComplete="off" inputMode="decimal" required value={d.threshold} onChange={(e) => set({ threshold: e.currentTarget.value })} />
           </Field>
           <Field label={`Hysteresis (${shown})`} hint="How far back it must come before the alert clears, so it doesn't flap.">
-            <Input inputMode="decimal" value={d.hysteresis} onChange={(e) => set({ hysteresis: e.currentTarget.value })} />
+            <Input name="hysteresis" autoComplete="off" inputMode="decimal" value={d.hysteresis} onChange={(e) => set({ hysteresis: e.currentTarget.value })} />
           </Field>
           <Field label="Minimum duration (s)" hint="How long it must stay past the threshold. Ignores one-sample spikes.">
-            <Input inputMode="decimal" value={d.durationS} onChange={(e) => set({ durationS: e.currentTarget.value })} />
+            <Input name="minimum-duration" autoComplete="off" inputMode="decimal" value={d.durationS} onChange={(e) => set({ durationS: e.currentTarget.value })} />
           </Field>
         </div>
         <Switch checked={d.enabled} onChange={(enabled) => set({ enabled })} label="Enabled" />
@@ -135,7 +135,7 @@ export function AlertsPage() {
   const newRule = () => setDraft({ id: null, pid: ids[0] ?? "010C", op: "above", threshold: "", hysteresis: "0", durationS: "0", enabled: true });
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 md:px-6 md:py-8 short:py-4">
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 md:px-6 md:py-8 short:py-4">
       <h1 className="text-3xl font-bold tracking-tight short:text-2xl">Alerts</h1>
 
       <section aria-label="Alert status" className="space-y-4">
@@ -154,19 +154,24 @@ export function AlertsPage() {
             </p>
           </div>
         )}
-        <div className="grid grid-cols-3 gap-4 short:max-w-xl">
-          {mounted && muted ? (
-            <Button size="drive" className="col-span-3" onClick={unmute}>
-              Unmute
-            </Button>
-          ) : (
-            MUTE_MINUTES.map((m) => (
-              <Button key={m} size="drive" onClick={() => mute(m)}>
-                Mute {m} min
-              </Button>
-            ))
-          )}
-        </div>
+        {mounted && muted ? (
+          <Button size="drive" className="w-full short:max-w-xl" onClick={unmute}>
+            Unmute
+          </Button>
+        ) : (
+          <div role="group" aria-labelledby="mute-for" className="short:max-w-xl">
+            <p id="mute-for" className="mb-2 text-lg font-semibold">
+              Mute for
+            </p>
+            <div className="grid grid-cols-3 gap-4">
+              {MUTE_MINUTES.map((m) => (
+                <Button key={m} size="drive" className="px-2" aria-label={`Mute ${m} min`} onClick={() => mute(m)}>
+                  {m} min
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       <StoppedOnly label="Your rules and the rule editor">
@@ -188,7 +193,7 @@ export function AlertsPage() {
                 {rules.map((r) => (
                   <li key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
                     <Switch
-                      className="min-w-0 flex-1"
+                      className="min-w-0 flex-1 basis-full sm:basis-0"
                       checked={r.enabled}
                       onChange={(enabled) => saveRules(rules.map((x) => (x.id === r.id ? { ...x, enabled } : x)))}
                       label={
@@ -208,7 +213,7 @@ export function AlertsPage() {
                         </>
                       }
                     />
-                    <div className="flex gap-1">
+                    <div className="ml-auto flex gap-1">
                       <Button variant="ghost" size="sm" onClick={() => setDraft(toDraft(r, r.id, units))}>
                         Edit
                       </Button>
@@ -216,7 +221,7 @@ export function AlertsPage() {
                         variant="ghost"
                         size="sm"
                         className="text-danger-fg"
-                        onClick={() => confirm(`Delete the rule "${describeRule(r)}"?`) && saveRules(rules.filter((x) => x.id !== r.id))}
+                        onClick={() => confirm(`Delete the rule “${describeRule(r)}”?`) && saveRules(rules.filter((x) => x.id !== r.id))}
                       >
                         Delete
                       </Button>

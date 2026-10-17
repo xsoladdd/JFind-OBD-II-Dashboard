@@ -78,11 +78,11 @@ export function Replay({ summary, csv }: { summary: TripSummary; csv: string }) 
           <span className="num w-16 shrink-0 text-xl">{fmtDuration(data.t[idx]! - start)}</span>
           <input type="range" min={0} max={n - 1} value={idx} onChange={(e) => setIdx(+e.target.value)} className="h-11 w-full accent-accent" aria-label="Trip timeline" />
         </label>
-        <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
+        <dl className="mt-2 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2 lg:grid-cols-4">
           {summary.columns.filter((c) => data.cols[c.id]).map((c) => (
             <div key={c.id} className="flex justify-between gap-2 border-b border-line py-1">
               <dt className="truncate text-fg-muted">{c.name}</dt>
-              <dd className="num">{show(c.id, data.cols[c.id]![idx])}</dd>
+              <dd className="num whitespace-nowrap">{show(c.id, data.cols[c.id]![idx])}</dd>
             </div>
           ))}
         </dl>

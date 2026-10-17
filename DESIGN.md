@@ -203,7 +203,8 @@ Don't:
    | `font-mono tabular-nums` on values | `num` |
 
 4. Retire the old helpers on your page: `card`, `btn`, `btnPrimary`, `input`, `Field` from `components/garage/ui.tsx`
-   (and the re-exports in `components/trips/ui.tsx`) now point at the kit; import from `@/components/ui` instead.
+   now point at the kit; import from `@/components/ui` instead (`num`/`str` live in `lib/garage/model.ts`;
+   `components/trips/ui.tsx` is gone, its formatters are in `components/trips/format.ts`).
    When no page imports them, delete them and the transition `@theme` block in `app/globals.css`.
 5. Add the landscape layout with `short:`. Don't change behaviour or data logic.
    Apply §12 "Restructure, don't just recolour": put the driving-relevant item first, move secondary things behind a
@@ -249,6 +250,19 @@ From JOID-0017 (Diagnostics, code history, ECU, History):
   Pending and Permanent stay on one row at 390px; they keep the 72px height.
 - **Delete in History still uses `confirm()`**, as before: the file sheet is the deliberate first step and the
   browser's confirmation the second.
+
+From JOID-0018 (Trips, Garage, Alerts, PIDs):
+
+- **Route colour ramp** (`RAMP` in `lib/trips/route.ts`) stays raw hex: a sequential low-to-high scale for the replay
+  route, always labelled with its min and max. It isn't vehicle state, and it doesn't step down with night dim.
+- **Folder card inside the Trip log disclosure** is a panel inside a panel: `FolderCard` is shared and boxed. Parking-only.
+- **Reminder and service dates** show as `YYYY-MM-DD`, the form the date field stores and edits them in.
+- **Row actions are 44px** (Edit, Delete, Test once) on Garage reminders, alert rules and custom PIDs. The rule and
+  PID lists are parking-only; on Garage, Delete asks for confirmation and Edit opens a locked form.
+- **Timer Arm below the fold on phones**: the live trip figures come first, so the timer's Arm is one scroll down in
+  portrait and just under the fold in the second column at 844x390. Arming is done before setting off.
+- **Field names** in car, reminder, service, rule and PID forms are local identifiers with `autocomplete="off"`:
+  browser autofill has nothing useful to offer for them.
 
 ## 12. Driving
 
@@ -320,12 +334,12 @@ Starting points for the pages still to restyle. These are suggestions to confirm
 | Page | Goes first | Behind a button or sheet | Locked while driving (already done) |
 | --- | --- | --- | --- |
 | Diagnostics (done) | Code count as a word ("No codes", "3 codes"), the check-engine light, one 72px Read codes | Readiness, export and report, saved scans, code history, scan details (disclosures) | Freeze frame, code history, Clear codes (also RPM-blocked) |
-| Trips | The current trip (time, distance) and the performance timer's state | Trip settings, replay, dyno inputs | (none yet; lock trip edits and dyno setup) |
-| Garage | The active car and its next due reminder | Car switcher, backup and import | Car, service and reminder forms (done) |
+| Trips (done) | The recorder state word, trip time and distance; the timer and dyno each with one 72px Arm | Trip settings (sheet), trip log and replay, timer accuracy, dyno charts, inputs and runs (disclosures) | Trip log and replay, settings, recent runs, dyno inputs, charts and runs |
+| Garage (done) | The active car: odometer and the next due reminder | Car switcher (sheet), service log, backup and import (disclosures) | Car, service and reminder forms, service log |
 | ECU (done) | Adapter voltage | Each test in its own disclosure, its last result in the summary | All four tests (Mode 06, per module, vehicle info, battery) |
-| Alerts | Firing alerts with Mute | Examples, rule list | Rule editor (done) |
+| Alerts (done) | Firing alert banner (as on the Dashboard), else "No alerts firing"/"Muted", then 72px Mute 5/15/60 or Unmute | Examples (disclosure), explanation at the bottom | Rule list and rule editor |
 | History (done) | Folder status, then scans or logs newest first | A file's actions and log viewer in a sheet | Log viewer |
-| PIDs | Parking-only page: no driving-first item | | PID editor and list (done) |
+| PIDs (done) | Parking-only: the list, New custom PID in the page header | Import and export, the Demo example (disclosures) | PID editor and list |
 
 **Worked example: the Dashboard.**
 1. First: the gauges, and nothing else. In the Drive layout that is speed as the hero, RPM as a full-width bar

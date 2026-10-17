@@ -34,13 +34,13 @@ function EntryForm({ car, initial, onDone }: { car: CarProfile; initial: Service
       }}
     >
       <Field label="Date">
-        <Input type="date" value={e.date} onChange={(ev) => up({ date: ev.target.value })} required />
+        <Input name="date" autoComplete="off" type="date" value={e.date} onChange={(ev) => up({ date: ev.target.value })} required />
       </Field>
       <Field label={`Odometer (${car.odometerUnit})`}>
-        <Input inputMode="decimal" value={odo} onChange={(ev) => setOdo(ev.target.value)} />
+        <Input name="odometer" autoComplete="off" inputMode="decimal" value={odo} onChange={(ev) => setOdo(ev.target.value)} />
       </Field>
       <Field label="Type">
-        <Select value={e.type} onChange={(ev) => up({ type: ev.target.value as ServiceType })}>
+        <Select name="type" value={e.type} onChange={(ev) => up({ type: ev.target.value as ServiceType })}>
           {SERVICE_TYPES.map((t) => (
             <option key={t} value={t}>
               {SERVICE_LABEL[t]}
@@ -49,18 +49,18 @@ function EntryForm({ car, initial, onDone }: { car: CarProfile; initial: Service
         </Select>
       </Field>
       <Field label={`Cost${car.currency ? ` (${car.currency})` : ""}`}>
-        <Input inputMode="decimal" value={cost} onChange={(ev) => setCost(ev.target.value)} />
+        <Input name="cost" autoComplete="off" inputMode="decimal" value={cost} onChange={(ev) => setCost(ev.target.value)} />
       </Field>
       {e.type === "custom" && (
         <div className="sm:col-span-2">
           <Field label="Custom type *">
-            <Input value={e.customType} onChange={(ev) => up({ customType: ev.target.value })} />
+            <Input name="custom-type" autoComplete="off" value={e.customType} onChange={(ev) => up({ customType: ev.target.value })} />
           </Field>
         </div>
       )}
       <div className="sm:col-span-2">
         <Field label="Notes">
-          <Textarea rows={2} value={e.notes} onChange={(ev) => up({ notes: ev.target.value })} />
+          <Textarea name="notes" autoComplete="off" rows={2} value={e.notes} onChange={(ev) => up({ notes: ev.target.value })} />
         </Field>
       </div>
       <div className="flex flex-wrap gap-3 sm:col-span-2">

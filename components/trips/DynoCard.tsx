@@ -130,7 +130,7 @@ export function DynoCard() {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 short:grid-cols-1">
               {!armed ? (
-                <Button variant="primary" size="drive" disabled={curbKg === null} onClick={() => (seen ? arm() : setNotice(true))}>
+                <Button size="drive" disabled={curbKg === null} onClick={() => (seen ? arm() : setNotice(true))}>
                   Arm
                 </Button>
               ) : (
@@ -219,7 +219,7 @@ function NumInput({ label, value, onValue, step }: { label: string; value: numbe
   }
   return (
     <Field label={label}>
-      <Input
+      <Input name={label.toLowerCase().replace(/[^a-z0-9]+/g, "-")} autoComplete="off"
         inputMode="decimal"
         step={step}
         value={text}
@@ -284,7 +284,7 @@ function Inputs({
                   : `Radius ${(radius * 1000).toFixed(0)} mm (unloaded, from the size; a loaded tyre is a bit smaller).`
             }
           >
-            <Input value={cfg.tyre} placeholder="e.g. 205/55 R16" onChange={(e) => up({ tyre: e.target.value })} />
+            <Input name="tyre-size" autoComplete="off" value={cfg.tyre} placeholder="e.g. 205/55 R16" onChange={(e) => up({ tyre: e.target.value })} />
           </Field>
           <Switch className="sm:col-span-2" checked={cfg.losses} onChange={(losses) => up({ losses })} label="Include rolling resistance and air drag" />
           {cfg.losses ? (

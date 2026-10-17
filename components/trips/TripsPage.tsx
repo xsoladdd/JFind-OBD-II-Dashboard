@@ -20,7 +20,7 @@ export function TripsPage() {
   const connected = status === "connected";
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 md:px-6 md:py-8 short:py-4">
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 md:px-6 md:py-8 short:py-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <h1 className="text-3xl font-bold tracking-tight short:text-2xl">Trips</h1>

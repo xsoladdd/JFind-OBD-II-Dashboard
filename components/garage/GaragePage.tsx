@@ -36,7 +36,7 @@ function ActiveCar({ car, onEdit }: { car: CarProfile; onEdit: () => void }) {
   return (
     <section aria-labelledby="active-car" className="space-y-5">
       <div>
-        <h2 id="active-car" className="text-2xl font-bold">
+        <h2 id="active-car" className="text-2xl font-bold break-words">
           {car.name}
         </h2>
         <p className="text-fg-muted">{[car.make, car.model, car.year].filter(Boolean).join(" ") || "No make/model yet"}</p>
@@ -48,13 +48,13 @@ function ActiveCar({ car, onEdit }: { car: CarProfile; onEdit: () => void }) {
           label="Odometer"
           value={odo}
           unit={car.odometerUnit}
-          note={car.odometerAt ? `Updated ${car.odometerAt.slice(0, 10)}` : undefined}
+          note={car.odometerAt ? `Updated ${new Date(car.odometerAt).toLocaleDateString()}` : undefined}
         />
         <div className="min-w-0">
           <div className="text-sm text-fg-muted">Next due</div>
           {next ? (
             <>
-              <p className="mt-1 flex flex-wrap items-center gap-2 text-2xl font-bold">
+              <p className="mt-1 flex flex-wrap items-center gap-2 text-2xl font-bold break-words">
                 {next.r.title}
                 <Badge tone={REMINDER_TONE[next.status]} className="px-3 py-1 text-base">
                   {REMINDER_LABEL[next.status]}
@@ -151,7 +151,7 @@ export function GaragePage() {
   const mode = useConnection((s) => s.mode);
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 md:px-6 md:py-8 short:py-4">
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 md:px-6 md:py-8 short:py-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-bold tracking-tight short:text-2xl">Garage</h1>
         {loaded && !form && profiles.length > 0 && (
@@ -187,15 +187,6 @@ export function GaragePage() {
         </Panel>
       )}
 
-      {folderStatus !== "ready" && (
-        <section className="space-y-3">
-          <InlineNote tone="warn" title="Choose a folder to save your cars">
-            Until then they only live in this tab and are lost when it closes.
-          </InlineNote>
-          <FolderCard />
-        </section>
-      )}
-
       {!loaded ? null : form ? (
         <Panel title={form.initial?.id ? "Edit car" : "New car"}>
           <StoppedOnly label="Car details">
@@ -216,7 +207,7 @@ export function GaragePage() {
             <EmptyState
               title="No cars yet"
               action={
-                <Button variant="primary" onClick={() => setForm({})}>
+                <Button variant={detectedVin ? "secondary" : "primary"} onClick={() => setForm({})}>
                   Add car
                 </Button>
               }
@@ -226,6 +217,14 @@ export function GaragePage() {
           )}
           <Backup />
         </>
+      )}
+      {folderStatus !== "ready" && (
+        <section className="space-y-3">
+          <InlineNote tone="warn" title="Choose a folder to save your cars">
+            Until then they only live in this tab and are lost when it closes.
+          </InlineNote>
+          <FolderCard />
+        </section>
       )}
       <CarsSheet open={cars} onClose={() => setCars(false)} onAdd={() => setForm({})} />
     </main>

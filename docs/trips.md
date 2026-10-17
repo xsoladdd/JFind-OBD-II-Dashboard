@@ -94,4 +94,10 @@ Rows are streamed with `appendText` every 5 s, so a crash loses at most about 5 
 
 ## Screenshots
 
-`docs/screenshots/trips/`: Demo mode, 390px and desktop.
+`docs/screenshots/redesign/trips/`: Demo mode at 390x844 (`-phone`), 844x390 (`-landscape`) and 1280x800 (`-desktop`), parked and
+moving.
+
+Layout (DESIGN.md §12): the recorder state as one word ("Recording", "Ready", "Auto-record off", "Not connected") and
+the live trip figures on top; the timer and dyno each with one 72px Arm; the trip log with replay, trip settings
+(a sheet), the timer's accuracy note and recent runs behind disclosures and locked while moving. There is no manual
+start/stop: trips record automatically.

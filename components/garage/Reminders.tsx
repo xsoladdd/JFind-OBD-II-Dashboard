@@ -33,14 +33,14 @@ function ReminderForm({ car, initial, onDone }: { car: CarProfile; initial: Remi
     >
       <div className="sm:col-span-2">
         <Field label="What is due *">
-          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Oil change" />
+          <Input name="what-is-due" autoComplete="off" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Oil change" />
         </Field>
       </div>
       <Field label="Due date">
-        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        <Input name="due-date" autoComplete="off" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       </Field>
       <Field label={`Due at odometer (${car.odometerUnit})`}>
-        <Input inputMode="decimal" value={odo} onChange={(e) => setOdo(e.target.value)} />
+        <Input name="due-at-odometer" autoComplete="off" inputMode="decimal" value={odo} onChange={(e) => setOdo(e.target.value)} />
       </Field>
       <p className="text-sm text-fg-faint sm:col-span-2">Set a date, an odometer, or both. Whichever comes first makes it due.</p>
       <div className="flex flex-wrap gap-3 sm:col-span-2">
@@ -83,7 +83,7 @@ export function Reminders({ car }: { car: CarProfile }) {
           <li key={r.id} className="flex items-start justify-between gap-3 py-3">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-semibold">{r.title}</span>
+                <span className="font-semibold break-words">{r.title}</span>
                 <Badge tone={REMINDER_TONE[status]}>{REMINDER_LABEL[status]}</Badge>
               </div>
               <div className="text-sm text-fg-muted">{dueText(r, car, odo)}</div>

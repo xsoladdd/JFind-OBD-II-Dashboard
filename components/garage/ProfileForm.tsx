@@ -38,46 +38,46 @@ export function ProfileForm({ initial, onDone }: { initial?: Partial<CarProfile>
     <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
       <div className="sm:col-span-2">
         <Field label="Name *">
-          <Input value={p.name} onChange={(e) => up({ name: e.target.value })} placeholder="e.g. Daily Golf" required />
+          <Input name="name" autoComplete="off" value={p.name} onChange={(e) => up({ name: e.target.value })} placeholder="e.g. Daily Golf" required />
         </Field>
       </div>
       <Field label="Make">
-        <Input value={p.make} onChange={(e) => up({ make: e.target.value })} />
+        <Input name="make" autoComplete="off" value={p.make} onChange={(e) => up({ make: e.target.value })} />
       </Field>
       <Field label="Model">
-        <Input value={p.model} onChange={(e) => up({ model: e.target.value })} />
+        <Input name="model" autoComplete="off" value={p.model} onChange={(e) => up({ model: e.target.value })} />
       </Field>
       <Field label="Year">
-        <Input inputMode="numeric" value={year} onChange={(e) => setYear(e.target.value)} />
+        <Input name="year" autoComplete="off" inputMode="numeric" value={year} onChange={(e) => setYear(e.target.value)} />
       </Field>
       <Field label="Fuel type">
-        <Select value={p.fuelType} onChange={(e) => up({ fuelType: e.target.value as FuelType })}>
+        <Select name="fuel-type" value={p.fuelType} onChange={(e) => up({ fuelType: e.target.value as FuelType })}>
           {FUEL_TYPES.map((f) => (
             <option key={f}>{f}</option>
           ))}
         </Select>
       </Field>
       <Field label="Fuel price per litre">
-        <Input inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
+        <Input name="fuel-price-per" autoComplete="off" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
       </Field>
       <Field label="Currency (e.g. SEK)">
-        <Input value={p.currency} maxLength={8} onChange={(e) => up({ currency: e.target.value })} />
+        <Input name="currency" autoComplete="off" value={p.currency} maxLength={8} onChange={(e) => up({ currency: e.target.value })} />
       </Field>
       <Field label="Odometer">
-        <Input inputMode="decimal" value={odo} onChange={(e) => setOdo(e.target.value)} />
+        <Input name="odometer" autoComplete="off" inputMode="decimal" value={odo} onChange={(e) => setOdo(e.target.value)} />
       </Field>
       <Field label="Unit">
-        <Select value={p.odometerUnit} onChange={(e) => up({ odometerUnit: e.target.value as OdoUnit })}>
+        <Select name="unit" value={p.odometerUnit} onChange={(e) => up({ odometerUnit: e.target.value as OdoUnit })}>
           <option>km</option>
           <option>mi</option>
         </Select>
       </Field>
       <Field label="Curb weight (kg, for the dyno)">
-        <Input inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} />
+        <Input name="curb-weight" autoComplete="off" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} />
       </Field>
       <div className="sm:col-span-2">
         <Field label="VIN (read from the car when connected)">
-          <Input className="font-mono" value={p.vin ?? ""} onChange={(e) => up({ vin: e.target.value.toUpperCase() || null })} />
+          <Input name="vin" autoComplete="off" className="font-mono" value={p.vin ?? ""} onChange={(e) => up({ vin: e.target.value.toUpperCase() || null })} />
         </Field>
       </div>
       <div className="flex flex-wrap gap-3 sm:col-span-2">

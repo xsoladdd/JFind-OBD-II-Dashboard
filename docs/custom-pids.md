@@ -100,4 +100,8 @@ Sends the request with polling paused (`withPollingPaused`) and shows the raw re
 
 ## Screenshots
 
-`docs/screenshots/custom-pids/`: `pids-empty-phone.png`, `pids-form-test-phone.png`, `pids-list-phone.png`, `pids-list-desktop.png`, `pids-form-test-desktop.png`, `engineer-new-pids-phone.png`, `engineer-new-pids-desktop.png`.
+`docs/screenshots/redesign/pids/`: the list and the editor with a Test once result, at 390x844, 844x390 and 1280x800, parked and moving.
+`docs/screenshots/custom-pids/`: `engineer-new-pids-phone.png`, `engineer-new-pids-desktop.png` (the dashboard's Engineer view).
+
+Layout: a parking-only page. New custom PID in the page header, the list (locked while moving) first; import/export
+and the Demo example are disclosures.

@@ -104,9 +104,9 @@ The Garage weight's backward compatibility is tested in `lib/garage/garage.test.
 
 ## Screenshots
 
-`docs/screenshots/dyno/` (Demo mode):
+`docs/screenshots/redesign/trips/` (Demo mode): `trips-dyno-phone.png` (a pull's peak figures; the charts are locked while moving),
+`trips-dyno-charts-phone.png` (charts, inputs used and accuracy, parked) and `trips-timer-notice-phone.png` (the shared
+safety notice). The curb weight field is in the Garage car form (`docs/screenshots/redesign/garage/garage-car-form-phone.png`).
 
-- `notice-*`: the shared safety notice
-- `result-*`: one run
-- `compare-*`: two runs; `compare-inputs-desktop` also shows the inputs panel
-- `garage-weight-*`: the Garage form's curb weight field
+On the page the dyno has one 72px **Arm**; its inputs, charts and run list are behind disclosures and locked while the
+car moves (DESIGN.md §12).

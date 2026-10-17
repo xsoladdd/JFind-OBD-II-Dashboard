@@ -26,7 +26,7 @@ export function TripSettings({ open, onClose }: { open: boolean; onClose: () => 
               description="Starts when the car moves while connected. Keeps live polling running whenever the adapter is connected."
             />
             <Field label="End a trip after being stopped for (min)" hint={`Disconnecting always ends it. Default ${DEFAULT_TRIP_STOP_MIN} min.`}>
-              <Input
+              <Input name="end-a-trip" autoComplete="off"
                 type="number"
                 min={1}
                 max={120}

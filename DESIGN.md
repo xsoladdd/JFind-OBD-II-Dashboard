@@ -51,9 +51,10 @@ Rules:
 - `ok` is the accent on purpose. A second green next to lime would read as two different meanings.
 - No pure black or white except the sheet backdrop (`bg-black/70`).
 
-**Transition remap.** Until every page is restyled, `app/globals.css` redefines Tailwind's `zinc-*` (warm graphite
-ramp) and `sky-*` (lime ramp, `sky-600` darkened so old buttons keep 4.5:1 with light text). That is why pages not yet
-restyled already look close. Remove the block once nothing uses `zinc-*` or `sky-*` (`grep -rE "(zinc|sky)-[0-9]" components app`).
+**Transition remap: removed.** While pages were being restyled, `app/globals.css` redefined Tailwind's `zinc-*` and
+`sky-*` to the Cluster ramps. Every page now uses the tokens, so the block is gone (JOID-0018): a `zinc-*` or `sky-*`
+class now renders Tailwind's own cold grey and blue, which is an easy way to spot a stray one
+(`grep -rE "(zinc|sky)-[0-9]" components app` should find nothing).
 
 ## 3. Type
 
@@ -202,10 +203,9 @@ Don't:
    | `emerald-*` | `ok` |
    | `font-mono tabular-nums` on values | `num` |
 
-4. Retire the old helpers on your page: `card`, `btn`, `btnPrimary`, `input`, `Field` from `components/garage/ui.tsx`
-   now point at the kit; import from `@/components/ui` instead (`num`/`str` live in `lib/garage/model.ts`;
-   `components/trips/ui.tsx` is gone, its formatters are in `components/trips/format.ts`).
-   When no page imports them, delete them and the transition `@theme` block in `app/globals.css`.
+4. Import from `@/components/ui`. The old helpers (`components/garage/ui.tsx`, `components/trips/ui.tsx`) and the
+   transition remap are gone; `num`/`str` live in `lib/garage/model.ts`, the trip formatters in
+   `components/trips/format.ts`.
 5. Add the landscape layout with `short:`. Don't change behaviour or data logic.
    Apply §12 "Restructure, don't just recolour": put the driving-relevant item first, move secondary things behind a
    button or a sheet, and wrap typing and careful reading in `StoppedOnly`.

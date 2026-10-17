@@ -89,33 +89,6 @@
   --radius-control: var(--r-control);
 }
 
-/* Transition only: pages not restyled yet use zinc-* and sky-* literals. Tint them to the Cluster ramps so they
-   don't clash. Delete this block once no component uses zinc-* or sky-* (see DESIGN.md, Agent guide). */
-@theme {
-  --color-zinc-50: oklch(0.985 0.003 75);
-  --color-zinc-100: oklch(0.96 0.005 80);
-  --color-zinc-200: oklch(0.92 0.006 75);
-  --color-zinc-300: oklch(0.87 0.008 75);
-  --color-zinc-400: oklch(0.78 0.01 75);
-  --color-zinc-500: oklch(0.66 0.012 75);
-  --color-zinc-600: oklch(0.5 0.01 70);
-  --color-zinc-700: oklch(0.37 0.01 70);
-  --color-zinc-800: oklch(0.29 0.009 70);
-  --color-zinc-900: oklch(0.195 0.007 70);
-  --color-zinc-950: oklch(0.155 0.006 70);
-  --color-sky-50: oklch(0.97 0.05 122);
-  --color-sky-100: oklch(0.95 0.08 122);
-  --color-sky-200: oklch(0.92 0.13 122);
-  --color-sky-300: oklch(0.89 0.17 122);
-  --color-sky-400: oklch(0.84 0.18 122);
-  --color-sky-500: oklch(0.55 0.14 122);
-  --color-sky-600: oklch(0.5 0.13 122); /* old primary buttons keep light text: 4.5:1 */
-  --color-sky-700: oklch(0.45 0.12 122);
-  --color-sky-800: oklch(0.4 0.1 122);
-  --color-sky-900: oklch(0.34 0.08 122);
-  --color-sky-950: oklch(0.27 0.06 122);
-}
-
 /* Phones held sideways: short and wide. The shell swaps the bottom tab bar for a side rail. */
 @custom-variant short (@media (orientation: landscape) and (max-height: 32rem));
 

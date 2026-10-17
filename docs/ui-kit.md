@@ -150,9 +150,3 @@ pure part, for tests. Optional `className` goes on the lock panel (for margins).
 ## cx
 
 `cx("a", cond && "b", undefined)` joins class names and skips falsy ones.
-
-## Old helpers (retiring)
-
-`card`, `btn`, `btnPrimary`, `input` and `Field` in `components/garage/ui.tsx` now render through the kit so
-unconverted pages match. Don't use them in new code; see the
-agent guide in `DESIGN.md`.

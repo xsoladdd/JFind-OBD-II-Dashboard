@@ -1,47 +1,65 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { Badge, Button, buttonClass } from "@/components/ui";
 import { useConnection } from "@/lib/store/connection";
 import { DynoCard } from "./DynoCard";
 import { PerfTimerCard } from "./PerfTimerCard";
 import { TripComputer } from "./TripComputer";
 import { TripList } from "./TripList";
 import { TripSettings } from "./TripSettings";
-import { btn, btnPrimary, card } from "./ui";
 
+/**
+ * Drive-first: the live trip on top (state word, big figures), then the timer and dyno with one big Arm each. The trip
+ * log and the settings are behind a disclosure and a sheet, and locked while moving (DESIGN.md "Driving").
+ */
 export function TripsPage() {
   const { status, mode, connect } = useConnection();
+  const [settings, setSettings] = useState(false);
+  const connected = status === "connected";
 
   return (
-    <main className="mx-auto w-full max-w-4xl space-y-4 px-4 py-6">
-      <header>
-        <h1 className="text-2xl font-bold">Trips</h1>
-        <p className="text-sm text-zinc-400">
-          Trip computer, performance timer, dyno estimate and a log of every drive.{mode === "demo" && " Demo mode: all values come from the simulator."}
-        </p>
+    <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 md:px-6 md:py-8 short:py-4">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold tracking-tight short:text-2xl">Trips</h1>
+          {mode === "demo" && <Badge title="All values come from the simulator">Demo</Badge>}
+        </div>
+        <Button aria-haspopup="dialog" aria-expanded={settings} onClick={() => setSettings(true)}>
+          Trip settings
+        </Button>
       </header>
 
-      {status !== "connected" && (
-        <section className={`${card} text-sm`}>
-          <p>{status === "connecting" || status === "reconnecting" ? "Connecting…" : "Not connected to an adapter."}</p>
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-            <Link href="/" className={`${btnPrimary} px-5 py-3 text-center`}>
-              Connect
-            </Link>
-            <button onClick={() => void connect("demo")} disabled={status === "connecting"} className={`${btn} px-5 py-3`}>
-              Demo mode
-            </button>
-          </div>
-        </section>
-      )}
-
-      <div className={`grid gap-4 ${status === "connected" ? "lg:grid-cols-2" : ""}`}>
-        <TripComputer />
-        {status === "connected" && <PerfTimerCard />}
+      <div className="grid items-start gap-6 lg:grid-cols-2 short:grid-cols-2">
+        <div className="space-y-6">
+          <TripComputer />
+          {!connected && (
+            <div className="space-y-3">
+              {(status === "connecting" || status === "reconnecting") && (
+                <p className="text-lg text-fg-muted" role="status">
+                  Connecting…
+                </p>
+              )}
+              <div className="grid gap-4 sm:grid-cols-2 short:grid-cols-1">
+                <Link href="/" className={buttonClass("primary", "drive")}>
+                  Connect
+                </Link>
+                <Button size="drive" onClick={() => void connect("demo")} disabled={status === "connecting"}>
+                  Demo mode
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="space-y-6">
+          {connected && <PerfTimerCard />}
+          <DynoCard />
+        </div>
       </div>
-      <DynoCard />
+
       <TripList />
-      <TripSettings />
+      <TripSettings open={settings} onClose={() => setSettings(false)} />
     </main>
   );
 }

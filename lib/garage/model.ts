@@ -99,6 +99,22 @@ export function reminderStatus(r: Pick<Reminder, "dueDate" | "dueOdometer">, tod
   return worst;
 }
 
+/** A car's reminders with their status, most urgent first (the first one is the "next due"). */
+export function remindersByUrgency(car: CarProfile, services: ServiceEntry[], reminders: Reminder[], today: string) {
+  const odo = currentOdometer(car, services);
+  return reminders
+    .filter((r) => r.carId === car.id)
+    .map((r) => ({ r, status: reminderStatus(r, today, odo) }))
+    .sort((a, b) => RANK[b.status] - RANK[a.status]);
+}
+
+/** Form text to a number: "" → null, otherwise a finite number ≥ 0 (or null if it isn't one). Accepts a decimal comma. */
+export const num = (s: string): number | null => {
+  const n = s.trim() === "" ? NaN : Number(s.replace(",", "."));
+  return Number.isFinite(n) && n >= 0 ? n : null;
+};
+export const str = (n: number | null) => (n === null ? "" : String(n));
+
 /** Number of reminders that are overdue or due soon, for the nav badge. */
 export function dueCount(profiles: CarProfile[], services: ServiceEntry[], reminders: Reminder[], today: string): number {
   return reminders.filter((r) => {

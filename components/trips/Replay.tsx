@@ -8,8 +8,9 @@ import { useUnits } from "@/lib/store/settings";
 import { parseTripCsv, type TripSummary } from "@/lib/trips/format";
 import { decimate } from "@/lib/trips/route";
 import { toDisplay } from "@/lib/units";
+import { cx, NO_VALUE, SegmentedControl } from "@/components/ui";
+import { disp, fmtDuration } from "./format";
 import { RouteMap, type RoutePoint } from "./RouteMap";
-import { btn, disp, fmtDuration } from "./ui";
 
 const MAX_POINTS = 800;
 const MAIN = ["010D", "010C"];
@@ -25,13 +26,13 @@ export function Replay({ summary, csv }: { summary: TripSummary; csv: string }) 
   const [colourBy, setColourBy] = useState<"010D" | "010C">("010D");
 
   const keep = useMemo(() => decimate(n, MAX_POINTS), [n]);
-  if (n < 2) return <p className="text-sm text-zinc-400">This trip has too few samples to replay.</p>;
+  if (n < 2) return <p className="text-fg-muted">This trip has too few samples to replay.</p>;
 
   const start = data.t[0]!;
   const end = data.t[n - 1]!;
   const show = (id: string, raw: number | null | undefined) => {
     const unit = liveDef(id)?.unit ?? "";
-    return raw === null || raw === undefined ? "—" : `${fmt(toDisplay(raw, unit, units).value, toDisplay(0, unit, units).unit)} ${toDisplay(0, unit, units).unit}`;
+    return raw === null || raw === undefined ? NO_VALUE : `${fmt(toDisplay(raw, unit, units).value, toDisplay(0, unit, units).unit)} ${toDisplay(0, unit, units).unit}`;
   };
   const series = (ids: string[]): Series[] =>
     ids.flatMap((id, slot) => {
@@ -53,7 +54,7 @@ export function Replay({ summary, csv }: { summary: TripSummary; csv: string }) 
     />
   );
   const legend = (ids: string[]) => (
-    <div className="mb-1 flex flex-wrap gap-x-4 text-xs text-zinc-300">
+    <div className="mb-1 flex flex-wrap gap-x-4 text-sm text-fg-muted">
       {ids.map((id, slot) => (
         <span key={id} className="flex items-center gap-1.5">
           <span className="h-0.5 w-4" style={{ background: SERIES[slot % SERIES.length] }} />
@@ -73,15 +74,15 @@ export function Replay({ summary, csv }: { summary: TripSummary; csv: string }) 
   return (
     <div className="space-y-4">
       <div>
-        <label className="flex items-center gap-3 text-sm">
-          <span className="w-16 shrink-0 font-mono tabular-nums">{fmtDuration(data.t[idx]! - start)}</span>
-          <input type="range" min={0} max={n - 1} value={idx} onChange={(e) => setIdx(+e.target.value)} className="w-full accent-sky-500" aria-label="Trip timeline" />
+        <label className="flex min-h-11 items-center gap-3">
+          <span className="num w-16 shrink-0 text-xl">{fmtDuration(data.t[idx]! - start)}</span>
+          <input type="range" min={0} max={n - 1} value={idx} onChange={(e) => setIdx(+e.target.value)} className="h-11 w-full accent-accent" aria-label="Trip timeline" />
         </label>
-        <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-4">
+        <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
           {summary.columns.filter((c) => data.cols[c.id]).map((c) => (
-            <div key={c.id} className="flex justify-between gap-2 border-b border-zinc-800 py-0.5">
-              <dt className="truncate text-zinc-400">{c.name}</dt>
-              <dd className="font-mono tabular-nums">{show(c.id, data.cols[c.id]![idx])}</dd>
+            <div key={c.id} className="flex justify-between gap-2 border-b border-line py-1">
+              <dt className="truncate text-fg-muted">{c.name}</dt>
+              <dd className="num">{show(c.id, data.cols[c.id]![idx])}</dd>
             </div>
           ))}
         </dl>
@@ -94,13 +95,16 @@ export function Replay({ summary, csv }: { summary: TripSummary; csv: string }) 
 
       {others.length > 0 && (
         <div>
-          <div className="mb-2 flex flex-wrap gap-1.5">
+          <div className="mb-2 flex flex-wrap gap-2">
             {others.map((id) => (
               <button
                 key={id}
                 aria-pressed={picked.includes(id)}
                 onClick={() => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id].slice(-SERIES.length)))}
-                className={`rounded-full border px-2.5 py-1 text-xs ${picked.includes(id) ? "border-sky-500 bg-sky-500/15 text-sky-200" : "border-zinc-700 text-zinc-400"}`}
+                className={cx(
+                  "min-h-11 rounded-control border px-3 text-sm font-medium transition-colors duration-150",
+                  picked.includes(id) ? "border-accent bg-accent-soft text-fg" : "border-line-strong text-fg-muted hover:bg-surface-2",
+                )}
               >
                 {liveDef(id)?.name ?? id}
               </button>
@@ -117,19 +121,22 @@ export function Replay({ summary, csv }: { summary: TripSummary; csv: string }) 
 
       {summary.gps && (
         <div>
-          <div className="mb-2 flex items-center gap-2">
-            <h3 className="text-sm font-semibold">Route</h3>
-            <span className="ml-auto text-xs text-zinc-400">Colour by</span>
-            {(["010D", "010C"] as const).map((id) => (
-              <button key={id} className={`${btn} !px-2 !py-1 text-xs ${colourBy === id ? "!border-sky-500 text-sky-200" : ""}`} onClick={() => setColourBy(id)}>
-                {id === "010D" ? "Speed" : "RPM"}
-              </button>
-            ))}
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <h3 className="font-semibold">Route</h3>
+            <SegmentedControl
+              label="Colour the route by"
+              value={colourBy}
+              onChange={setColourBy}
+              options={[
+                { value: "010D", label: "Speed" },
+                { value: "010C", label: "RPM" },
+              ]}
+            />
           </div>
           {route.length ? (
             <RouteMap points={route} cursor={idx} min={cmin} max={cmax} legend={[disp(cmin, cdef.unit, units).join(" "), disp(cmax, cdef.unit, units).join(" ")]} />
           ) : (
-            <p className="text-sm text-zinc-400">No GPS fixes were recorded on this trip.</p>
+            <p className="text-fg-muted">No GPS fixes were recorded on this trip.</p>
           )}
         </div>
       )}

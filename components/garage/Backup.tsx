@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Button, Disclosure, InlineNote } from "@/components/ui";
 import { useGarage } from "@/lib/store/garage";
-import { btn, card } from "./ui";
 
 export function Backup() {
   const exportJson = useGarage((s) => s.exportJson);
@@ -27,23 +27,18 @@ export function Backup() {
   }
 
   return (
-    <section className={card}>
-      <h2 className="font-semibold">Backup</h2>
-      <p className="mt-1 text-sm text-zinc-400">A JSON file of every car, service entry and reminder. It is only ever saved on this device.</p>
-      <div className="mt-3 flex gap-2">
-        <button className={btn} onClick={download}>
-          Export JSON
-        </button>
-        <button className={btn} onClick={() => file.current?.click()}>
-          Import JSON
-        </button>
+    <Disclosure summary="Backup: export and import">
+      <p className="text-fg-muted">A JSON file of every car, service entry and reminder. It is only ever saved on this device.</p>
+      <div className="mt-3 flex flex-wrap gap-3">
+        <Button onClick={download}>Export JSON</Button>
+        <Button onClick={() => file.current?.click()}>Import JSON</Button>
         <input ref={file} type="file" accept="application/json,.json" className="hidden" onChange={(e) => void onFile(e.target.files?.[0])} />
       </div>
       {msg && (
-        <p role="status" className={`mt-3 text-sm ${msg.ok ? "text-emerald-300" : "text-red-300"}`}>
+        <InlineNote role="status" tone={msg.ok ? "info" : "danger"} className="mt-3">
           {msg.text}
-        </p>
+        </InlineNote>
       )}
-    </section>
+    </Disclosure>
   );
 }

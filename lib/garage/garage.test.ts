@@ -9,8 +9,10 @@ import {
   dueCount,
   findProfileByVin,
   makeBackup,
+  num,
   parseBackup,
   reminderStatus,
+  remindersByUrgency,
   type CarProfile,
   type Reminder,
   type ServiceEntry,
@@ -63,6 +65,33 @@ describe("reminder status", () => {
   it("counts overdue and due-soon for the badge", () => {
     const rs = [rem({ dueDate: "2025-06-01" }), rem({ id: "r2", dueDate: "2025-06-20" }), rem({ id: "r3", dueDate: "2030-01-01" })];
     expect(dueCount([car()], [], rs, today)).toBe(2);
+  });
+});
+
+describe("reminders by urgency", () => {
+  it("puts overdue first, then due soon, then ok, for this car only, keeping order within a status", () => {
+    const rs = [
+      rem({ id: "ok", dueDate: "2030-01-01" }),
+      rem({ id: "soon", dueDate: "2025-06-20" }),
+      rem({ id: "late", dueDate: "2025-06-01" }),
+      rem({ id: "other", carId: "c2", dueDate: "2025-01-01" }),
+      rem({ id: "soon2", dueOdometer: 100500 }),
+    ];
+    expect(remindersByUrgency(car(), [], rs, "2025-06-15").map((x) => `${x.r.id}:${x.status}`)).toEqual([
+      "late:overdue",
+      "soon:due-soon",
+      "soon2:due-soon",
+      "ok:ok",
+    ]);
+  });
+});
+
+describe("form numbers", () => {
+  it("reads blanks as null, accepts a decimal comma, rejects negatives and text", () => {
+    expect(num("")).toBeNull();
+    expect(num(" 12,5 ")).toBe(12.5);
+    expect(num("-1")).toBeNull();
+    expect(num("abc")).toBeNull();
   });
 });
 

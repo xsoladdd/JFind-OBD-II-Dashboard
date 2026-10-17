@@ -26,25 +26,25 @@ export function RouteMap({ points, cursor, min, max, legend }: { points: RoutePo
 
   return (
     <div className="mx-auto max-w-xl">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded-md bg-zinc-950" role="img" aria-label="Route of the trip, drawn from GPS fixes">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded-control bg-bg" role="img" aria-label="Route of the trip, drawn from GPS fixes">
         {fit.xy.slice(1).map(([x, y], k) => {
           const [x0, y0] = fit.xy[k]!;
           const v = pts[k]!.value;
-          return <line key={k} x1={x0} y1={y0} x2={x} y2={y} stroke={v === null ? "#52525b" : rampColor(v, min, max)} strokeWidth="3" strokeLinecap="round" />;
+          return <line key={k} x1={x0} y1={y0} x2={x} y2={y} stroke={v === null ? "var(--line-strong)" : rampColor(v, min, max)} strokeWidth="3" strokeLinecap="round" />;
         })}
-        {fit.xy[0] && <circle cx={fit.xy[0][0]} cy={fit.xy[0][1]} r="5" fill="#f4f4f5" stroke="#18181b" strokeWidth="2"><title>Start</title></circle>}
-        {c >= 0 && <circle cx={fit.xy[c]![0]} cy={fit.xy[c]![1]} r="7" fill="none" stroke="#f4f4f5" strokeWidth="2.5" />}
+        {fit.xy[0] && <circle cx={fit.xy[0][0]} cy={fit.xy[0][1]} r="5" fill="var(--fg)" stroke="var(--bg)" strokeWidth="2"><title>Start</title></circle>}
+        {c >= 0 && <circle cx={fit.xy[c]![0]} cy={fit.xy[c]![1]} r="7" fill="none" stroke="var(--fg)" strokeWidth="2.5" />}
         <g transform={`translate(${PAD},${H - PAD})`}>
-          <line x1="0" x2={fit.bar.px} y1="0" y2="0" stroke="#a1a1aa" strokeWidth="2" />
-          <line x1="0" x2="0" y1="-4" y2="4" stroke="#a1a1aa" strokeWidth="2" />
-          <line x1={fit.bar.px} x2={fit.bar.px} y1="-4" y2="4" stroke="#a1a1aa" strokeWidth="2" />
-          <text x={fit.bar.px / 2} y="-7" textAnchor="middle" fontSize="11" fill="#a1a1aa">{fit.bar.label}</text>
+          <line x1="0" x2={fit.bar.px} y1="0" y2="0" stroke="var(--fg-muted)" strokeWidth="2" />
+          <line x1="0" x2="0" y1="-4" y2="4" stroke="var(--fg-muted)" strokeWidth="2" />
+          <line x1={fit.bar.px} x2={fit.bar.px} y1="-4" y2="4" stroke="var(--fg-muted)" strokeWidth="2" />
+          <text x={fit.bar.px / 2} y="-7" textAnchor="middle" fontSize="13" fill="var(--fg-muted)">{fit.bar.label}</text>
         </g>
-        <text x={W - PAD} y={PAD + 4} textAnchor="end" fontSize="11" fill="#71717a">N ↑</text>
+        <text x={W - PAD} y={PAD + 4} textAnchor="end" fontSize="13" fill="var(--fg-faint)">N ↑</text>
       </svg>
-      <div className="mt-1 flex items-center gap-2 text-[11px] text-zinc-400">
+      <div className="num mt-1 flex items-center gap-2 text-[13px] text-fg-muted">
         <span>{legend[0]}</span>
-        <span className="flex h-1.5 flex-1 overflow-hidden rounded">
+        <span className="flex h-1.5 flex-1 overflow-hidden rounded-full">
           {RAMP.map((c) => <span key={c} className="flex-1" style={{ background: c }} />)}
         </span>
         <span>{legend[1]}</span>

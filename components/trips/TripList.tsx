@@ -8,7 +8,8 @@ import { removeSavedTrip, useTrips } from "@/lib/store/trips";
 import { readCsv } from "@/lib/trips/files";
 import type { TripSummary } from "@/lib/trips/format";
 import { Replay } from "./Replay";
-import { btn, card, disp, fmtDuration } from "./ui";
+import { Badge, Button, Disclosure, InlineNote, StoppedOnly } from "@/components/ui";
+import { disp, fmtDuration } from "./format";
 
 interface Row {
   base: string;
@@ -40,49 +41,55 @@ export function TripList() {
   };
 
   return (
-    <section className={card} aria-label="Trip log">
-      <h2 className="mb-3 font-semibold">Trip log</h2>
-      {folder !== "ready" && (
-        <div className="mb-3 space-y-2">
-          <p className="text-sm font-medium text-amber-200">Choose a folder to save trips.</p>
-          <p className="text-xs text-zinc-400">
-            The trip computer works without one, but trips are only kept until you close the tab.
-          </p>
-          <FolderCard />
-        </div>
-      )}
-      {!rows.length && <p className="text-sm text-zinc-400">No trips yet. Each drive is recorded automatically while connected.</p>}
-      <ul className="space-y-2">
-        {rows.map((r) => (
-          <li key={r.base} className="rounded-md border border-zinc-800">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-sm">
-              <span className="font-medium">{new Date(r.summary.startedAt).toLocaleString()}</span>
-              <span className="text-zinc-400">
-                {r.summary.endedAt === null
-                  ? "not finished (the app closed during this trip)"
-                  : `${disp(r.summary.distanceKm, "km", units, 1).join(" ")} · ${fmtDuration(r.summary.durationS * 1000)}`}
-              </span>
-              {r.unsaved && <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] uppercase text-zinc-300">not saved</span>}
-              <span className="ml-auto flex gap-2">
-                <button className={btn} onClick={() => setOpen(open === r.base ? null : r.base)} aria-expanded={open === r.base}>
-                  {open === r.base ? "Close" : "Replay"}
-                </button>
-                {!r.unsaved && (
-                  <button className={`${btn} text-red-300`} onClick={() => void del(r)} aria-label={`Delete trip from ${new Date(r.summary.startedAt).toLocaleString()}`}>
-                    Delete
-                  </button>
-                )}
-              </span>
-            </div>
-            {open === r.base && (
-              <div className="border-t border-zinc-800 p-3">
-                <TripReplay row={r} />
+    <Disclosure id="trip-log" summary={`Trip log (${rows.length})`}>
+      <StoppedOnly label="Trip log and replay">
+        {folder !== "ready" && (
+          <div className="mb-4 space-y-3">
+            <InlineNote tone="warn" title="Choose a folder to save trips.">
+              The trip computer works without one, but trips are only kept until you close the tab.
+            </InlineNote>
+            <FolderCard />
+          </div>
+        )}
+        {!rows.length && <p className="text-fg-muted">No trips yet. Each drive is recorded automatically while connected.</p>}
+        <ul className="space-y-3">
+          {rows.map((r) => (
+            <li key={r.base} className="rounded-control border border-line">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3">
+                <div className="min-w-0">
+                  <p className="font-semibold">{new Date(r.summary.startedAt).toLocaleString()}</p>
+                  <p className="text-sm text-fg-muted">
+                    {r.summary.endedAt === null ? (
+                      "not finished (the app closed during this trip)"
+                    ) : (
+                      <span className="num text-base">
+                        {disp(r.summary.distanceKm, "km", units, 1).join(" ")}, {fmtDuration(r.summary.durationS * 1000)}
+                      </span>
+                    )}
+                  </p>
+                </div>
+                {r.unsaved && <Badge tone="warn">Not saved</Badge>}
+                <span className="ml-auto flex gap-2">
+                  <Button size="sm" onClick={() => setOpen(open === r.base ? null : r.base)} aria-expanded={open === r.base}>
+                    {open === r.base ? "Close" : "Replay"}
+                  </Button>
+                  {!r.unsaved && (
+                    <Button variant="danger" size="sm" onClick={() => void del(r)} aria-label={`Delete trip from ${new Date(r.summary.startedAt).toLocaleString()}`}>
+                      Delete
+                    </Button>
+                  )}
+                </span>
               </div>
-            )}
-          </li>
-        ))}
-      </ul>
-    </section>
+              {open === r.base && (
+                <div className="border-t border-line p-3">
+                  <TripReplay row={r} />
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      </StoppedOnly>
+    </Disclosure>
   );
 }
 
@@ -92,7 +99,7 @@ function TripReplay({ row }: { row: Row }) {
     if (row.csv !== undefined) return;
     readCsv(row.base).then(setCsv, () => setCsv(null));
   }, [row.base, row.csv]);
-  if (csv === undefined) return <p className="text-sm text-zinc-400">Loading…</p>;
-  if (csv === null) return <p className="text-sm text-zinc-400">The sample file ({row.base}.csv) is missing or unreadable.</p>;
+  if (csv === undefined) return <p className="text-fg-muted">Loading…</p>;
+  if (csv === null) return <p className="text-fg-muted">The sample file ({row.base}.csv) is missing or unreadable.</p>;
   return <Replay summary={row.summary} csv={csv} />;
 }

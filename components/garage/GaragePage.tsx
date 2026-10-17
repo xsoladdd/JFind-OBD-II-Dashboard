@@ -1,26 +1,27 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
-import { currentOdometer, type CarProfile } from "@/lib/garage/model";
 import { FolderCard } from "@/components/storage/FolderCard";
+import { Badge, Button, cx, EmptyState, InlineNote, NO_VALUE, Panel, Sheet, Stat, StoppedOnly } from "@/components/ui";
+import { currentOdometer, remindersByUrgency, todayIso, type CarProfile } from "@/lib/garage/model";
 import { useFolder } from "@/lib/storage/folder";
-import { useGarage } from "@/lib/store/garage";
 import { useConnection } from "@/lib/store/connection";
-import { StoppedOnly } from "@/components/ui";
+import { useGarage } from "@/lib/store/garage";
 import { Backup } from "./Backup";
 import { ProfileForm } from "./ProfileForm";
-import { Reminders } from "./Reminders";
+import { dueText, REMINDER_LABEL, REMINDER_TONE, Reminders } from "./Reminders";
 import { ServiceLog } from "./ServiceLog";
-import { btn, btnPrimary, card } from "./ui";
 
-function CarCard({ car, onEdit }: { car: CarProfile; onEdit: () => void }) {
+/** The active car at a glance: its odometer and the next due reminder first, details and actions below. */
+function ActiveCar({ car, onEdit }: { car: CarProfile; onEdit: () => void }) {
   const services = useGarage((s) => s.services);
+  const reminders = useGarage((s) => s.reminders);
   const connected = useConnection((s) => s.status === "connected");
   const readOdo = useGarage((s) => s.readOdometerFromCar);
   const del = useGarage((s) => s.deleteProfile);
   const [note, setNote] = useState("");
   const odo = currentOdometer(car, services);
+  const next = remindersByUrgency(car, services, reminders, todayIso())[0];
 
   async function fromCar() {
     setNote("Reading…");
@@ -33,150 +34,200 @@ function CarCard({ car, onEdit }: { car: CarProfile; onEdit: () => void }) {
   }
 
   return (
-    <section className={card}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">{car.name}</h2>
-          <p className="text-sm text-zinc-400">{[car.make, car.model, car.year].filter(Boolean).join(" ") || "No make/model yet"}</p>
-        </div>
-        <div className="flex gap-3">
-          <button className="text-sm text-sky-300 underline" onClick={onEdit}>
-            Edit
-          </button>
-          <button
-            className="text-sm text-red-300 underline"
-            onClick={() => confirm(`Delete ${car.name} with its service log and reminders?`) && void del(car.id)}
-          >
-            Delete
-          </button>
+    <section aria-labelledby="active-car" className="space-y-5">
+      <div>
+        <h2 id="active-car" className="text-2xl font-bold">
+          {car.name}
+        </h2>
+        <p className="text-fg-muted">{[car.make, car.model, car.year].filter(Boolean).join(" ") || "No make/model yet"}</p>
+      </div>
+
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Stat
+          size="lg"
+          label="Odometer"
+          value={odo}
+          unit={car.odometerUnit}
+          note={car.odometerAt ? `Updated ${car.odometerAt.slice(0, 10)}` : undefined}
+        />
+        <div className="min-w-0">
+          <div className="text-sm text-fg-muted">Next due</div>
+          {next ? (
+            <>
+              <p className="mt-1 flex flex-wrap items-center gap-2 text-2xl font-bold">
+                {next.r.title}
+                <Badge tone={REMINDER_TONE[next.status]} className="px-3 py-1 text-base">
+                  {REMINDER_LABEL[next.status]}
+                </Badge>
+              </p>
+              <p className="mt-1 text-fg-muted">{dueText(next.r, car, odo)}</p>
+            </>
+          ) : (
+            <p className="mt-1 text-2xl font-bold text-fg-muted">Nothing set</p>
+          )}
         </div>
       </div>
-      <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-        <dt className="text-zinc-400">Fuel</dt>
+
+      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+        <dt className="text-fg-muted">Fuel</dt>
         <dd>
           {car.fuelType}
-          {car.fuelPrice !== null && ` · ${car.fuelPrice} ${car.currency || "(no currency)"}/L`}
+          {car.fuelPrice !== null && `, ${car.fuelPrice} ${car.currency || "(no currency)"}/L`}
         </dd>
         {car.weightKg != null && (
           <>
-            <dt className="text-zinc-400">Curb weight</dt>
+            <dt className="text-fg-muted">Curb weight</dt>
             <dd>{car.weightKg} kg</dd>
           </>
         )}
-        <dt className="text-zinc-400">VIN</dt>
-        <dd className="font-mono text-xs">{car.vin ?? "—"}</dd>
-        <dt className="text-zinc-400">Odometer</dt>
-        <dd>
-          {odo === null ? "—" : `${odo} ${car.odometerUnit}`}
-          {car.odometerAt && <span className="text-xs text-zinc-500"> (updated {car.odometerAt.slice(0, 10)})</span>}
-        </dd>
+        <dt className="text-fg-muted">VIN</dt>
+        <dd className="break-all font-mono text-sm">{car.vin ?? NO_VALUE}</dd>
       </dl>
-      {connected && (
-        <div className="mt-3 flex items-center gap-3">
-          <button className={btn} onClick={() => void fromCar()}>
-            Read odometer from car
-          </button>
-          {note && <span className="text-xs text-zinc-400">{note}</span>}
-        </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <Button onClick={onEdit}>Edit car</Button>
+        {connected && <Button onClick={() => void fromCar()}>Read odometer from car</Button>}
+        <Button variant="danger" onClick={() => confirm(`Delete ${car.name} with its service log and reminders?`) && void del(car.id)}>
+          Delete car
+        </Button>
+      </div>
+      {note && (
+        <p className="text-fg-muted" role="status">
+          {note}
+        </p>
       )}
     </section>
   );
 }
 
+/** One tap to switch car once the sheet is open (two deliberate steps, DESIGN.md "Driving"). */
+function CarsSheet({ open, onClose, onAdd }: { open: boolean; onClose: () => void; onAdd: () => void }) {
+  const { profiles, activeId, setActive } = useGarage();
+  return (
+    <Sheet open={open} onClose={onClose} title="Cars">
+      <div className="space-y-4 px-2 pb-2 sm:px-3">
+        <ul className="grid gap-3">
+          {profiles.map((p) => (
+            <li key={p.id}>
+              <button
+                type="button"
+                aria-pressed={p.id === activeId}
+                onClick={() => {
+                  setActive(p.id);
+                  onClose();
+                }}
+                className={cx(
+                  "flex min-h-18 w-full items-center justify-between gap-3 rounded-control border px-4 text-left text-xl font-semibold transition-colors duration-150",
+                  p.id === activeId ? "border-accent bg-surface-2" : "border-line-strong hover:bg-surface-2",
+                )}
+              >
+                <span className="min-w-0 truncate">{p.name}</span>
+                {p.id === activeId && <Badge tone="accent">Active</Badge>}
+              </button>
+            </li>
+          ))}
+        </ul>
+        <Button
+          variant="primary"
+          size="drive"
+          className="w-full"
+          onClick={() => {
+            onClose();
+            onAdd();
+          }}
+        >
+          Add car
+        </Button>
+      </div>
+    </Sheet>
+  );
+}
+
 export function GaragePage() {
-  const { profiles, activeId, activeProfile, detectedVin, loaded, readOnly, error, load, setActive, dismissDetectedVin } = useGarage();
+  const { profiles, activeProfile, detectedVin, loaded, readOnly, error, load, dismissDetectedVin } = useGarage();
   const folderStatus = useFolder((s) => s.status);
   const [form, setForm] = useState<{ initial?: Partial<CarProfile> } | null>(null);
+  const [cars, setCars] = useState(false);
   const mode = useConnection((s) => s.mode);
 
   return (
-    <main className="mx-auto w-full max-w-4xl space-y-4 px-4 py-6">
-      <header className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Garage</h1>
-          <p className="text-sm text-zinc-400">Your cars, service history and reminders, saved as one file in your storage folder.</p>
-        </div>
-        <Link href="/" className="text-sm text-sky-300 underline">
-          Connect
-        </Link>
+    <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 md:px-6 md:py-8 short:py-4">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-3xl font-bold tracking-tight short:text-2xl">Garage</h1>
+        {loaded && !form && profiles.length > 0 && (
+          <Button aria-haspopup="dialog" aria-expanded={cars} onClick={() => setCars(true)}>
+            Cars ({profiles.length})
+          </Button>
+        )}
       </header>
 
+      {error && (
+        <InlineNote role="alert" tone="danger">
+          <p>{error}</p>
+          {readOnly && (
+            <Button size="sm" className="mt-2" onClick={() => void load()}>
+              Try again
+            </Button>
+          )}
+        </InlineNote>
+      )}
+
+      {detectedVin && !form && (
+        <Panel role="status">
+          <p>
+            Connected car{mode === "demo" ? " (simulator)" : ""} has VIN <span className="break-all font-mono">{detectedVin}</span>, which isn&apos;t in your
+            garage yet.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Button variant="primary" onClick={() => setForm({ initial: { vin: detectedVin } })}>
+              Create profile
+            </Button>
+            <Button onClick={dismissDetectedVin}>Not now</Button>
+          </div>
+        </Panel>
+      )}
+
       {folderStatus !== "ready" && (
-        <section className="space-y-2">
-          <p className="text-sm font-semibold text-amber-300">Choose a folder to save your cars</p>
-          <p className="text-sm text-zinc-400">Until then they only live in this tab and are lost when it closes.</p>
+        <section className="space-y-3">
+          <InlineNote tone="warn" title="Choose a folder to save your cars">
+            Until then they only live in this tab and are lost when it closes.
+          </InlineNote>
           <FolderCard />
         </section>
       )}
 
-      {error && (
-        <div role="alert" className="rounded-md border border-red-800 bg-red-950 p-3 text-sm text-red-200">
-          <p>{error}</p>
-          {readOnly && (
-            <button className={`${btn} mt-2`} onClick={() => void load()}>
-              Try again
-            </button>
-          )}
-        </div>
-      )}
-
-      {detectedVin && !form && (
-        <section className="rounded-lg border border-sky-700 bg-sky-950/40 p-4" role="status">
-          <p className="text-sm">
-            Connected car{mode === "demo" ? " (simulator)" : ""} has VIN <span className="font-mono">{detectedVin}</span>, which isn&apos;t in your garage yet.
-          </p>
-          <div className="mt-3 flex gap-2">
-            <button className={btnPrimary} onClick={() => setForm({ initial: { vin: detectedVin } })}>
-              Create profile
-            </button>
-            <button className={btn} onClick={dismissDetectedVin}>
-              Not now
-            </button>
-          </div>
-        </section>
-      )}
-
       {!loaded ? null : form ? (
-        <section className={card}>
-          <h2 className="mb-3 font-semibold">{form.initial?.id ? "Edit car" : "New car"}</h2>
+        <Panel title={form.initial?.id ? "Edit car" : "New car"}>
           <StoppedOnly label="Car details">
             <ProfileForm key={form.initial?.id ?? "new"} initial={form.initial} onDone={() => setForm(null)} />
           </StoppedOnly>
-        </section>
+        </Panel>
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-2">
-            {profiles.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => setActive(p.id)}
-                aria-pressed={p.id === activeId}
-                className={`rounded-full border px-4 py-2 text-sm font-semibold ${p.id === activeId ? "border-sky-500 bg-sky-600/30" : "border-zinc-700 hover:bg-zinc-800"}`}
-              >
-                {p.name}
-              </button>
-            ))}
-            <button className={btn} onClick={() => setForm({})}>
-              + Add car
-            </button>
-          </div>
-
           {activeProfile ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-4">
-                <CarCard car={activeProfile} onEdit={() => setForm({ initial: activeProfile })} />
+            <>
+              <div className="grid items-start gap-6 lg:grid-cols-2 short:grid-cols-2">
+                <ActiveCar car={activeProfile} onEdit={() => setForm({ initial: activeProfile })} />
                 <Reminders car={activeProfile} />
               </div>
               <ServiceLog car={activeProfile} />
-            </div>
+            </>
           ) : (
-            <section className={`${card} text-sm text-zinc-300`}>
-              <p>No cars yet. Add one, or connect to a car (or use Demo mode) and its VIN will offer to create a profile.</p>
-            </section>
+            <EmptyState
+              title="No cars yet"
+              action={
+                <Button variant="primary" onClick={() => setForm({})}>
+                  Add car
+                </Button>
+              }
+            >
+              Add one, or connect to a car (or use Demo mode) and its VIN will offer to create a profile.
+            </EmptyState>
           )}
           <Backup />
         </>
       )}
+      <CarsSheet open={cars} onClose={() => setCars(false)} onAdd={() => setForm({})} />
     </main>
   );
 }

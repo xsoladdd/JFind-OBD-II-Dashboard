@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { FUEL_TYPES, type CarProfile, type FuelType, type OdoUnit } from "@/lib/garage/model";
+import { Button, Field, Input, Select } from "@/components/ui";
+import { FUEL_TYPES, num, str, type CarProfile, type FuelType, type OdoUnit } from "@/lib/garage/model";
 import { blankProfile, useGarage } from "@/lib/store/garage";
-import { btn, btnPrimary, Field, input, num, str } from "./ui";
 
 export function ProfileForm({ initial, onDone }: { initial?: Partial<CarProfile>; onDone: () => void }) {
   const save = useGarage((s) => s.saveProfile);
@@ -35,58 +35,56 @@ export function ProfileForm({ initial, onDone }: { initial?: Partial<CarProfile>
   }
 
   return (
-    <form onSubmit={submit} className="grid grid-cols-2 gap-3">
-      <div className="col-span-2">
+    <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
+      <div className="sm:col-span-2">
         <Field label="Name *">
-          <input className={input} value={p.name} onChange={(e) => up({ name: e.target.value })} placeholder="e.g. Daily Golf" required />
+          <Input value={p.name} onChange={(e) => up({ name: e.target.value })} placeholder="e.g. Daily Golf" required />
         </Field>
       </div>
       <Field label="Make">
-        <input className={input} value={p.make} onChange={(e) => up({ make: e.target.value })} />
+        <Input value={p.make} onChange={(e) => up({ make: e.target.value })} />
       </Field>
       <Field label="Model">
-        <input className={input} value={p.model} onChange={(e) => up({ model: e.target.value })} />
+        <Input value={p.model} onChange={(e) => up({ model: e.target.value })} />
       </Field>
       <Field label="Year">
-        <input className={input} inputMode="numeric" value={year} onChange={(e) => setYear(e.target.value)} />
+        <Input inputMode="numeric" value={year} onChange={(e) => setYear(e.target.value)} />
       </Field>
       <Field label="Fuel type">
-        <select className={input} value={p.fuelType} onChange={(e) => up({ fuelType: e.target.value as FuelType })}>
+        <Select value={p.fuelType} onChange={(e) => up({ fuelType: e.target.value as FuelType })}>
           {FUEL_TYPES.map((f) => (
             <option key={f}>{f}</option>
           ))}
-        </select>
+        </Select>
       </Field>
       <Field label="Fuel price per litre">
-        <input className={input} inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
+        <Input inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
       </Field>
       <Field label="Currency (e.g. SEK)">
-        <input className={input} value={p.currency} maxLength={8} onChange={(e) => up({ currency: e.target.value })} />
+        <Input value={p.currency} maxLength={8} onChange={(e) => up({ currency: e.target.value })} />
       </Field>
       <Field label="Odometer">
-        <input className={input} inputMode="decimal" value={odo} onChange={(e) => setOdo(e.target.value)} />
+        <Input inputMode="decimal" value={odo} onChange={(e) => setOdo(e.target.value)} />
       </Field>
       <Field label="Unit">
-        <select className={input} value={p.odometerUnit} onChange={(e) => up({ odometerUnit: e.target.value as OdoUnit })}>
+        <Select value={p.odometerUnit} onChange={(e) => up({ odometerUnit: e.target.value as OdoUnit })}>
           <option>km</option>
           <option>mi</option>
-        </select>
+        </Select>
       </Field>
       <Field label="Curb weight (kg, for the dyno)">
-        <input className={input} inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} />
+        <Input inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} />
       </Field>
-      <div className="col-span-2">
+      <div className="sm:col-span-2">
         <Field label="VIN (read from the car when connected)">
-          <input className={`${input} font-mono`} value={p.vin ?? ""} onChange={(e) => up({ vin: e.target.value.toUpperCase() || null })} />
+          <Input className="font-mono" value={p.vin ?? ""} onChange={(e) => up({ vin: e.target.value.toUpperCase() || null })} />
         </Field>
       </div>
-      <div className="col-span-2 flex gap-2">
-        <button className={btnPrimary} disabled={!valid}>
+      <div className="flex flex-wrap gap-3 sm:col-span-2">
+        <Button type="submit" variant="primary" disabled={!valid}>
           Save car
-        </button>
-        <button type="button" className={btn} onClick={onDone}>
-          Cancel
-        </button>
+        </Button>
+        <Button onClick={onDone}>Cancel</Button>
       </div>
     </form>
   );

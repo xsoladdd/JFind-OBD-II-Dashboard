@@ -23,6 +23,8 @@ export function useDisplay(id: string) {
     max: conv(def?.max ?? 100),
     conv,
     live: v,
+    /** Set for status values (and the gear): show this text instead of a number. */
+    text: def?.text,
   };
 }
 export type Display = ReturnType<typeof useDisplay>;

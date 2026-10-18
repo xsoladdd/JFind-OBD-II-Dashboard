@@ -91,6 +91,12 @@
 
 /* Phones held sideways: short and wide. The shell swaps the bottom tab bar for a side rail. */
 @custom-variant short (@media (orientation: landscape) and (max-height: 32rem));
+/* Short and wide enough for two columns of page content next to the rail. A landscape split-screen pane on a phone
+   (about 360x260) is short but not wide: one column there. */
+@custom-variant short-wide (@media (orientation: landscape) and (max-height: 32rem) and (min-width: 40rem));
+/* A small split-screen pane (about a third of a phone screen, e.g. 360x260 or 260x360): the drive view keeps only
+   what still reads at a glance. */
+@custom-variant split (@media (max-height: 26rem) and (max-width: 40rem));
 
 /* The full-screen drive view (/dashboard) is on screen: the shell's header and nav step back (still mounted, so the
    alert engine and trip watcher keep running). cacheComponents keeps a page you left mounted but hidden with an

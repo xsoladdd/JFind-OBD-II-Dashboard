@@ -21,7 +21,7 @@ export function EcuScreen() {
 
       {status !== "connected" ? (
         <Panel aria-live="polite" className="max-w-xl">
-          <h2 className="text-balance text-5xl font-bold tracking-tight">{busy ? "Connecting…" : "Not connected"}</h2>
+          <h2 className="text-balance text-5xl font-bold tracking-tight max-[23rem]:text-4xl">{busy ? "Connecting…" : "Not connected"}</h2>
           <div className="mt-5 grid gap-4">
             <Link href="/" className={buttonClass("primary", "drive")}>
               Connect

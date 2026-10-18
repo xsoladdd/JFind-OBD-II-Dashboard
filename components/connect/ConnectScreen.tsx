@@ -47,7 +47,7 @@ export function ConnectScreen() {
       </header>
 
       {/* Two columns once there is room, landscape phones included: the actions stay in the first one. */}
-      <div className="grid gap-4 lg:grid-cols-2 lg:items-start short:grid-cols-2 short:items-start">
+      <div className="grid gap-4 lg:grid-cols-2 lg:items-start short-wide:grid-cols-2 short:items-start">
         <div className="space-y-4">
           <CompatBanner />
           <StatusCard />

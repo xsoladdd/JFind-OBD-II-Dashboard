@@ -17,7 +17,8 @@ const DRIVE_TABS = ["/dashboard", "/trips"];
 const isActive = (path: string, href: string) => (href === "/" ? path === "/" : path === href || path.startsWith(`${href}/`));
 
 /** Phone tab: a bar along the top edge in portrait, along the left edge in the landscape rail. */
-const TAB = "relative flex min-h-14 w-full items-center justify-center truncate px-1 text-center font-semibold transition-colors duration-150 active:bg-surface-1";
+// Labels hyphenate instead of clipping in a narrow split-screen pane (260px: about 52px per tab).
+const TAB = "relative flex min-h-14 w-full items-center justify-center px-0.5 text-center leading-tight hyphens-auto [overflow-wrap:anywhere] font-semibold transition-colors duration-150 active:bg-surface-1";
 const tabTone = (active: boolean) => (active ? "text-fg" : "text-fg-faint hover:text-fg-muted");
 const Indicator = () => (
   <span

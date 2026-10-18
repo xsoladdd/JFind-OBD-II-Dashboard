@@ -30,7 +30,7 @@ function NotConnected({ lost }: { lost: boolean }) {
   return (
     <section aria-live="polite" className="mx-auto flex h-full max-w-md flex-col justify-center gap-6">
       <div>
-        <h1 className={cx("text-5xl font-bold tracking-tight", lost && !busy && "text-danger-fg")}>
+        <h1 className={cx("text-5xl font-bold tracking-tight max-[23rem]:text-4xl", lost && !busy && "text-danger-fg")}>
           {busy ? "Connecting…" : lost ? "Connection lost" : "Not connected"}
         </h1>
         {error && !busy && <p className="mt-3 text-lg text-fg-muted">{error}</p>}
@@ -94,7 +94,7 @@ export function Dashboard() {
         </div>
       </div>
       <div className="flex shrink-0 justify-end short:flex-col">
-        <Button size="drive" className="min-w-40" aria-haspopup="dialog" aria-expanded={menu} onClick={() => setMenu(true)}>
+        <Button size="drive" className="min-w-40 short:min-w-0" aria-haspopup="dialog" aria-expanded={menu} onClick={() => setMenu(true)}>
           Menu
         </Button>
       </div>

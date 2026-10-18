@@ -270,7 +270,7 @@ export function PidsPage() {
           {mounted && !demo ? " (start Demo mode on the Connect page first)" : ""}.
         </p>
         <Button className="mt-3" onClick={() => setDraft(toDraft({ ...EXAMPLE, id: newCustomId() }, true))}>
-          Fill the form with the example
+          Use the example
         </Button>
       </Disclosure>
     </main>

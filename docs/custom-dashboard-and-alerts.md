@@ -45,17 +45,20 @@ it as your own.
   shown as **N**) comes from community captures, not the SAE text **[verify]** on a car that reports it.
 - **Estimated otherwise** (`lib/dashboard/gear.ts`, glue in `lib/store/gear.ts`): in gear with the clutch engaged,
   rpm per km/h is fixed by the gearbox. Each speed reading (with the RPM read next to it) is a sample. Two samples in a
-  row within 3 % (plus the ±0.5 km/h rounding) count as steady and join a cluster (within 6 %). A cluster with 8+
+  row within 3 % (plus the ±0.5 km/h rounding) count as steady and join a cluster (within 10 %; clusters that drift within 10 % merge). A cluster with 8+
   samples is a gear; gears are numbered from the highest ratio (1st). A reading shows the nearest gear within 7 %
   (plus rounding), else nothing.
 - **No value** when stopped or below 8 km/h, below 1000 rpm (idle, coasting in neutral), with the clutch in or
-  mid-shift (the ratio matches no gear), and until 2 gears are known (the tile says **learning**). An estimate is
-  marked **est.**
+  mid-shift (the ratio matches no gear), and while learning (the tile says **learning**): until the learned gears
+  span at least 3× (1st to top is about 3.5–5× in a car). Without that, the upper gears, which are learned first,
+  would be numbered from 1. An estimate is marked **est.**
 - **Per car**: learned clusters are saved as `gear.learned` (`{ [garage car id or "default"]: [{ ratio, n }] }`),
   at most every 10 s, so they survive restarts (localStorage, and `settings.json` when a folder is linked). The Menu's
   "When parked" section shows how many gears are known and has **Reset**.
-- **Limits**: gear numbers start at the highest ratio *seen*: if a car never holds 1st gear steadily (8+ readings),
-  every number is one too low until it does; Reset clears a bad start. Automatics with a slipping torque converter
+- **Limits**: gear numbers start at the highest ratio *seen*. The 3× rule waits for 1st gear, but a gear skipped in
+  the middle (never held steadily for 8+ readings) would shift the numbers above it until it is learned; Reset clears a
+  bad start. CVTs have no fixed ratios and won't learn. Motorcycles (Detour) span less than 3× and would need a lower
+  threshold. Automatics with a slipping torque converter
   learn slowly or not at all at low speed. Not tested on a real car yet.
 - **Demo**: the simulator's car has five gears (`SIM_GEARS` in `lib/sim/engine.ts`) and doesn't report 01A4, so Demo
   shows the estimate: learning for the first minute or two, then gears.
@@ -92,7 +95,7 @@ it as your own.
   The chip opens **Acknowledge** and **Mute 5/15/60 min**. Mute silences the toast, sound and vibration, but the chip still shows the alert.
 - **Audio unlock**: browsers block audio until the user interacts with the page, so the shell arms the `AudioContext` on the first tap or key press (the Connect or Demo tap counts). Without that, alerts are silent but still show.
 
-Screenshots: `docs/screenshots/custom-dashboard/`, `docs/screenshots/alerts/` (the header chip) and `docs/screenshots/redesign/alerts/`
+Screenshots: `docs/screenshots/custom-dashboard/`, `docs/screenshots/alerts/` (the header chip) and `docs/screenshots/redesign/alerts/` JOID-0019 added `custom-390`, `custom-desktop`, `custom-split-<w>x<h>` (split-screen panes), `custom-edit-*`, and `drive-`/`hud-`/`shell-trips-split-*` in the same folder.
 (the page).
 
 `/alerts` layout (DESIGN.md §12): a firing alert shows the Dashboard's danger banner with one 72px Mute; otherwise "No

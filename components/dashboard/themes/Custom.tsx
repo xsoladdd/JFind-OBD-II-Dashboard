@@ -47,7 +47,7 @@ function GearView({ w }: { w: Widget }) {
         <span className={cx("num text-fg", w.size === "2x2" ? "text-6xl @[16rem]:text-8xl" : "text-5xl @[13rem]:text-6xl")}>
           {v ? gearText(v.value) : NO_VALUE}
         </span>
-        {!reported && <span className="text-lg text-fg-faint">{learned < 2 ? "learning" : "est."}</span>}
+        {!reported && <span className="text-lg text-fg-faint">{learned || (v && !Number.isNaN(v.value)) ? "est." : "learning"}</span>}
       </div>
     </div>
   );
@@ -159,7 +159,7 @@ function GearLearning() {
   const [learned, reset] = useGearLearning();
   return (
     <div className="flex items-center justify-between gap-3">
-      <p className="text-fg-muted">Gear estimate: {learned < 2 ? "learning" : `${learned} gears learned`}</p>
+      <p className="text-fg-muted">Gear estimate: {learned ? `${learned} gears learned` : "learning"}</p>
       <Button onClick={() => confirm("Forget the learned gears for this car?") && reset()}>Reset</Button>
     </div>
   );
@@ -376,7 +376,7 @@ export function Custom({ editing, setEditing }: { editing: boolean; setEditing: 
                     type="button"
                     aria-pressed={w.id === selected}
                     aria-label={`Change ${liveDef(w.pid)?.name ?? w.pid}`}
-                    className="absolute inset-0 rounded-panel"
+                    className="absolute inset-0 rounded-panel transition-colors duration-150 hover:bg-accent-soft focus-visible:-outline-offset-4"
                     onClick={() => setSelected(w.id === selected ? "" : w.id)}
                   />
                   <span

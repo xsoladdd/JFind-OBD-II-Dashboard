@@ -14,11 +14,14 @@ const MIN_SPEED = 8; // km/h: below this the clutch is usually slipping
 const MIN_RPM = 1000; // below this: idling or coasting in neutral, not a gear
 const STABLE = 0.03; // two readings in a row within 3 % (+ rounding): clutch engaged, not mid-shift
 const STABLE_MS = 2000;
-const MATCH = 0.06; // a sample joins a cluster within 6 %
+const MATCH = 0.1; // a sample joins (and clusters merge) within 10 %: low-speed rounding is up to ±6 %, gears are 15 %+ apart
 const ESTIMATE = 0.07; // a reading shows a gear within 7 % (+ rounding) of it; gear steps are usually 15 %+ apart
 // Speed comes in whole km/h, so at low speed the ratio itself is only known to ±0.5 / speed.
 const rounding = (speedKmh: number) => 0.5 / speedKmh;
 const KNOWN = 8; // samples before a cluster counts as a gear
+// 1st to top gear is about 3.5–5× in a car. Until the learned gears span 3×, 1st hasn't been seen yet and numbering
+// from the highest ratio would be wrong (in Demo the upper gears are learned first), so the estimate keeps learning.
+const MIN_SPREAD = 3;
 const N_CAP = 500;
 const MAX_CLUSTERS = 24;
 
@@ -48,12 +51,14 @@ export function learn(clusters: GearCluster[], ratio: number): GearCluster[] {
   return out;
 }
 
-/** The learned gear ratios, 1st gear first. */
-export const gearRatios = (clusters: GearCluster[]) =>
-  clusters
+/** The learned gear ratios, 1st gear first; empty while still learning (1st gear not seen yet). */
+export function gearRatios(clusters: GearCluster[]) {
+  const ratios = clusters
     .filter((c) => c.n >= KNOWN)
     .map((c) => c.ratio)
     .sort((a, b) => b - a);
+  return ratios.length >= 2 && ratios[0]! / ratios.at(-1)! >= MIN_SPREAD ? ratios : [];
+}
 
 /** Gear number for a ratio, or undefined when it matches none (clutch in, shifting, neutral). */
 export function gearFor(ratios: number[], ratio: number, tol = ESTIMATE): number | undefined {
@@ -81,7 +86,7 @@ export class GearLearner {
 
   constructor(public clusters: GearCluster[] = []) {}
 
-  /** The estimated gear, or undefined: stopped, idling, clutch in, shifting, or still learning (< 2 gears known). */
+  /** The estimated gear, or undefined: stopped, idling, clutch in, shifting, or still learning. */
   sample(t: number, rpm: number, speedKmh: number): number | undefined {
     if (speedKmh < MIN_SPEED || rpm < MIN_RPM) {
       this.prev = null;
@@ -93,7 +98,6 @@ export class GearLearner {
       this.changed = true;
     }
     this.prev = { t, ratio };
-    const ratios = gearRatios(this.clusters);
-    return ratios.length < 2 ? undefined : gearFor(ratios, ratio, ESTIMATE + rounding(speedKmh));
+    return gearFor(gearRatios(this.clusters), ratio, ESTIMATE + rounding(speedKmh));
   }
 }

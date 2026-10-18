@@ -40,7 +40,7 @@ export function feedGear(id: string, value: number, t: number) {
   }
 }
 
-/** [gears learned for the active car (as last saved), forget them]. */
+/** [gears learned for the active car (as last saved; 0 while still learning), forget them]. */
 export function useGearLearning(): [number, () => void] {
   const [all, save] = useSetting<unknown>(KEY, {});
   const [car] = useSetting<string | null>("garage.activeId", null);

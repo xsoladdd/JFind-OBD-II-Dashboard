@@ -57,6 +57,9 @@ const FUEL_TYPE = pick({
 const o2Present = (perBank: number) => (v: number) =>
   [...Array(8).keys()].filter((i) => v & (1 << i)).map((i) => `B${Math.floor(i / perBank) + 1}S${(i % perBank) + 1}`).join(" ") || "None";
 
+/** A gear number as text: 0 is neutral; NaN (not reported) shows the app's "--" (NO_VALUE in components/ui). */
+export const gearText = (v: number) => (Number.isNaN(v) ? "--" : v === 0 ? "N" : String(v));
+
 const def = (id: string, name: string, unit: string, bytes: number, min: number, max: number, gauge: GaugeType, decode: PidDef["decode"]): PidDef =>
   ({ id, name, unit, bytes, min, max, gauge, decode });
 const status = (id: string, name: string, bytes: number, decode: PidDef["decode"], text: PidDef["text"]): PidDef =>
@@ -122,6 +125,10 @@ const list: PidDef[] = [
   def("0161", "Driver demand torque", "%", 1, -125, 130, "bar", torque),
   def("0162", "Actual engine torque", "%", 1, -125, 130, "bar", torque),
   def("0163", "Engine reference torque", "Nm", 2, 0, 1000, "number", AB),
+  // Transmission actual gear (J1979 PID A4, newer cars only). Wikipedia's table: [A1] = ratio supported,
+  // ratio = (256C+D)/1000. A bit 0 = gear supported, gear = B bits 4–7 (0 = neutral) is from community captures,
+  // not the SAE text [verify]. Without bit 0 the gear reads NaN (not reported).
+  status("01A4", "Transmission gear", 4, (d) => (A(d) & 1 ? (d[1] ?? 0) >> 4 : NaN), gearText),
 ];
 
 export const PIDS: Record<string, PidDef> = Object.fromEntries(list.map((p) => [p.id, p]));

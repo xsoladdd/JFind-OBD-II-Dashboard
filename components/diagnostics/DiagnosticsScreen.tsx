@@ -28,7 +28,7 @@ function ConnectPrompt() {
   const busy = status === "connecting" || status === "reconnecting";
   return (
     <Panel aria-live="polite">
-      <h2 className="text-balance text-5xl font-bold tracking-tight">{busy ? "Connecting…" : "Not connected"}</h2>
+      <h2 className="text-balance text-5xl font-bold tracking-tight max-[23rem]:text-4xl">{busy ? "Connecting…" : "Not connected"}</h2>
       <p className="mt-2 text-lg text-fg-muted">Connect to the adapter to read codes.</p>
       {error && (
         <InlineNote tone="danger" className="mt-4">
@@ -57,7 +57,7 @@ function Answer({ scan }: { scan: Scan | null }) {
   const word = !scan ? "Not read yet" : n === null ? "Codes not read" : n === 0 ? "No codes" : `${n} ${n === 1 ? "code" : "codes"}`;
   return (
     <div aria-live="polite">
-      <h2 className={cx("text-balance text-5xl font-bold tracking-tight", !!n && "text-warn")}>{word}</h2>
+      <h2 className={cx("text-balance text-5xl font-bold tracking-tight max-[23rem]:text-4xl", !!n && "text-warn")}>{word}</h2>
       {scan && (
         <>
           <p className={cx("mt-3 text-xl font-semibold", mil ? "text-warn" : mil === false ? "text-ok" : "text-fg-muted")}>
@@ -219,8 +219,8 @@ export function DiagnosticsScreen() {
       </Suspense>
       <h1 className="mb-5 text-3xl font-bold tracking-tight short:mb-3 short:text-2xl">Diagnostics</h1>
 
-      <div className="grid gap-4 lg:grid-cols-2 lg:items-start short:grid-cols-2 short:items-start">
-        <div className={cx("space-y-4", !scan && "lg:col-span-2 lg:max-w-xl short:col-span-2")}>
+      <div className="grid gap-4 lg:grid-cols-2 lg:items-start short-wide:grid-cols-2 short:items-start">
+        <div className={cx("space-y-4", !scan && "lg:col-span-2 lg:max-w-xl short-wide:col-span-2")}>
           {viewError && (
             <InlineNote tone="danger" role="alert">
               {viewError}{" "}
@@ -272,7 +272,7 @@ export function DiagnosticsScreen() {
 
         {scan && <CodeTabs key={scan.at} scan={scan} />}
 
-        <div className="space-y-4 lg:col-span-2 short:col-span-2">
+        <div className="space-y-4 lg:col-span-2 short-wide:col-span-2">
           {scan && <ReadinessSection scan={scan} />}
           {scan && (
             <Disclosure summary="Export and report">

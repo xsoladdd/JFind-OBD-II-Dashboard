@@ -60,12 +60,19 @@ describe("PID decoders", () => {
     ["0161", [0x7d], 0],
     ["0162", [0xff], 130],
     ["0163", [0x01, 0x40], 320],
+    ["01A4", [0x03, 0x31, 0x05, 0xdc], 3], // 3rd gear (ratio 1.5)
+    ["01A4", [0x01, 0x01, 0x00, 0x00], 0], // neutral
   ])("%s %j → %d", (id, bytes, value) => {
     expect(PIDS[id]!.decode(bytes)).toBeCloseTo(value, 5);
   });
 
   it("covers every PID in the spec", () => {
-    expect(Object.keys(PIDS)).toHaveLength(65);
+    expect(Object.keys(PIDS)).toHaveLength(66);
+  });
+
+  it("reads no gear from 01A4 when its gear bit isn't set, and shows neutral as N", () => {
+    expect(PIDS["01A4"]!.decode([0x02, 0x30, 0x05, 0xdc])).toBeNaN();
+    expect([0, 3, NaN].map(PIDS["01A4"]!.text!)).toEqual(["N", "3", "--"]);
   });
 
   it("renders enum and bit-status PIDs as text", () => {

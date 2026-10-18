@@ -24,8 +24,9 @@ describe("simulator round trip", () => {
     const { client } = connectSim([1, 20]);
     await client.connect();
     const supported = await discoverSupported(client);
-    // The demo car has 4 of the 8 O2 sensors (lib/sim/morePids.ts) and no throttle C / pedal F.
-    const absent = ["0116", "0117", "011A", "011B", "011D", "0148", "014B"];
+    // The demo car has 4 of the 8 O2 sensors (lib/sim/morePids.ts), no throttle C / pedal F, and doesn't report its
+    // gear (01A4), so Demo shows the estimate.
+    const absent = ["0116", "0117", "011A", "011B", "011D", "0148", "014B", "01A4"];
     const cmds = [...new Set(PID_LIST.map(cmdOf))];
     expect(cmds.filter((c) => !supported.has(c))).toEqual(absent);
     expect(supported.has("0161") && supported.has("0163")).toBe(true);

@@ -54,7 +54,7 @@ export function Sport() {
           strokeWidth="14"
           strokeDasharray={arcLen}
           strokeDashoffset={arcLen * (1 - frac)}
-          style={{ transition: "stroke-dashoffset 200ms linear" }}
+          style={{ transition: "stroke-dashoffset 100ms linear" }}
         />
         {Array.from({ length: Math.floor(rpm.max / 1000) + 1 }, (_, k) => {
           const a = ((START + ((k * 1000) / rpm.max) * SWEEP) * Math.PI) / 180;

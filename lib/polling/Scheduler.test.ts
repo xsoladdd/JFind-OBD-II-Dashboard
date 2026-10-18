@@ -3,7 +3,7 @@ import { ElmClient } from "../elm/ElmClient";
 import type { CustomPid } from "../obd/custom";
 import { SimulatorTransport } from "../transport/SimulatorTransport";
 import { usePollingPause, withPollingPaused } from "./pause";
-import { Scheduler, TIERS } from "./Scheduler";
+import { LEAD, Scheduler, TIERS } from "./Scheduler";
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -49,13 +49,26 @@ describe("Scheduler", () => {
     expect(sent).not.toContain("0133");
     expect(scheduler.polled).not.toContain("0110");
 
-    const fast = Object.keys(TIERS).filter((id) => TIERS[id] === "fast");
+    const fast = Object.keys(TIERS).filter((id) => TIERS[id] === "fast" && scheduler.polled.includes(id));
     const others = scheduler.polled.filter((id) => !fast.includes(id));
     const minFast = Math.min(...fast.map(count));
     const maxOther = Math.max(...others.map(count));
     expect(minFast).toBeGreaterThan(maxOther);
     for (const id of others) expect(count(id)).toBeGreaterThanOrEqual(1); // medium and slow (incl. ATRV) all served
     expect(count("0105")).toBeGreaterThan(count("012F")); // medium beats slow
+  });
+
+  it("sends RPM every other request, and the rest still alternate between medium and fast items", async () => {
+    const { scheduler, sent } = await setup();
+    running = scheduler;
+    void scheduler.run();
+    await wait(400);
+    scheduler.stop();
+    const polls = sent.filter((c) => /^01[0-9A-F]{2}$|^ATRV$/.test(c) && !/^01[02468ACE]0$/.test(c)); // not the 0100/0120… discovery
+    for (let i = 1; i < polls.length; i++) expect(polls[i] === LEAD && polls[i - 1] === LEAD).toBe(false);
+    expect(polls.filter((c) => c === LEAD).length).toBeGreaterThanOrEqual(Math.floor(polls.length / 2));
+    const rest = polls.filter((c) => c !== LEAD);
+    expect(rest.filter((c) => TIERS[c] === "fast").length).toBeGreaterThan(rest.length / 4);
   });
 
   it("pauses while a hold is active and resumes after", async () => {

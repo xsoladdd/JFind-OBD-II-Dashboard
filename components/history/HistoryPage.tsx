@@ -90,7 +90,7 @@ export function HistoryPage() {
     <main className="mx-auto w-full max-w-6xl px-4 py-6 md:px-6 md:py-8 short:py-4">
       <h1 className="mb-5 text-3xl font-bold tracking-tight short:mb-3 short:text-2xl">History</h1>
 
-      <div className="grid gap-4 lg:grid-cols-2 lg:items-start short:grid-cols-2 short:items-start">
+      <div className="grid gap-4 lg:grid-cols-2 lg:items-start short-wide:grid-cols-2 short:items-start">
         <FolderCard />
 
         <div className="space-y-4">

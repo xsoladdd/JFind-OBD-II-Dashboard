@@ -45,7 +45,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         Skip to content
       </a>
       <header className="sticky top-0 z-40 drive:hidden flex h-14 items-center gap-3 border-b border-line bg-bg/95 pr-[max(1rem,env(safe-area-inset-right))] pl-[max(1rem,env(safe-area-inset-left))] backdrop-blur short:h-12">
-        <span translate="no" className="shrink-0 text-lg font-extrabold tracking-[0.02em] uppercase [font-stretch:75%]">
+        {/* Below 23rem (a split-screen pane) the status chip needs the room more than the wordmark. */}
+        <span translate="no" className="shrink-0 text-lg font-extrabold tracking-[0.02em] uppercase [font-stretch:75%] max-[23rem]:hidden">
           OBD Dash
         </span>
         <div className="ml-auto min-w-0">

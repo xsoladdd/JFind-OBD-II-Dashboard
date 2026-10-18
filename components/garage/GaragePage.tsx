@@ -197,7 +197,7 @@ export function GaragePage() {
         <>
           {activeProfile ? (
             <>
-              <div className="grid items-start gap-6 lg:grid-cols-2 short:grid-cols-2">
+              <div className="grid items-start gap-6 lg:grid-cols-2 short-wide:grid-cols-2">
                 <ActiveCar car={activeProfile} onEdit={() => setForm({ initial: activeProfile })} />
                 <Reminders car={activeProfile} />
               </div>

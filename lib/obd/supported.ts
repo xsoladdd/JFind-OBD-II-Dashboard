@@ -12,12 +12,12 @@ export function parseBitmask(base: number, bytes: number[]): string[] {
   return out;
 }
 
-/** Walks 0100 → 0120 → 0140 → 0160 while each range says the next one exists. */
+/** Walks 0100 → 0120 → … → 01A0 while each range says the next one exists (01A0 covers 01A4, the gear). */
 export async function discoverSupported(client: {
   send: (cmd: string) => Promise<string[]>;
 }): Promise<Set<string>> {
   const supported = new Set<string>();
-  for (const base of [0x00, 0x20, 0x40, 0x60]) {
+  for (const base of [0x00, 0x20, 0x40, 0x60, 0x80, 0xa0]) {
     let lines: string[];
     try {
       lines = await client.send(`01${hex2(base)}`);

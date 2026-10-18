@@ -31,7 +31,7 @@ export function TripsPage() {
         </Button>
       </header>
 
-      <div className="grid items-start gap-6 lg:grid-cols-2 short:grid-cols-2">
+      <div className="grid items-start gap-6 lg:grid-cols-2 short-wide:grid-cols-2">
         <div className="space-y-6">
           <TripComputer />
           {!connected && (

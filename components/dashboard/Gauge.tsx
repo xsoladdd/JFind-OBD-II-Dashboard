@@ -23,7 +23,7 @@ const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
 /**
  * Analog needle gauge that scales to fill its box. Zones are a thin ring outside the track; in a zone the needle and
- * value take the zone colour and its word ("High", "Low") appears. The needle eases with a CSS transition.
+ * value take the zone colour and its word ("High", "Low") appears. The needle eases with a short (100 ms) CSS transition, so it never trails a revving engine.
  */
 export function Gauge({
   label,
@@ -77,7 +77,7 @@ export function Gauge({
           </g>
         );
       })}
-      <g style={{ transform: `rotate(${angle(value ?? min)}deg)`, transformOrigin: "100px 100px", transition: "transform 250ms linear" }}>
+      <g style={{ transform: `rotate(${angle(value ?? min)}deg)`, transformOrigin: "100px 100px", transition: "transform 100ms linear" }}>
         <line x1="100" y1="100" x2="176" y2="100" stroke={tone ?? "var(--fg)"} strokeWidth="4" strokeLinecap="round" />
       </g>
       <circle cx="100" cy="100" r="7" fill="var(--surface-3)" />

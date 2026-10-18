@@ -60,8 +60,9 @@ function Figures({ stats, durationMs, speed, flow }: { stats: TripStats; duratio
   const [dist, distUnit] = disp(stats.distanceKm, "km", units, 2);
 
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-4">
+    <div className="@container space-y-5">
+      {/* One column in a narrow split-screen pane, where two 72px readouts side by side would run off the card. */}
+      <div className="grid gap-4 @[18rem]:grid-cols-2">
         <Stat size="xl" label="Trip time" value={fmtDuration(durationMs)} />
         <Stat size="xl" label="Distance" value={dist} unit={distUnit} />
         {live && <Stat size="lg" label="Speed" value={disp(speed, "km/h", units)[0]} unit={disp(0, "km/h", units)[1]} />}

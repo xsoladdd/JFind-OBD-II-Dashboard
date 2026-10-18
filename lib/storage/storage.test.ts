@@ -23,6 +23,16 @@ async function linked(root = new FakeDir("OBD Dash")) {
 
 afterEach(() => vi.unstubAllGlobals());
 
+/** A Map-backed localStorage that survives boot() (a restart), like the browser's. */
+function stubStorage(ls = new Map<string, string>()) {
+  vi.stubGlobal("localStorage", {
+    getItem: (k: string) => ls.get(k) ?? null,
+    setItem: (k: string, v: string) => void ls.set(k, v),
+    removeItem: (k: string) => void ls.delete(k),
+  });
+  return ls;
+}
+
 describe("checkPath", () => {
   it("rejects traversal, absolute paths, odd characters and anything outside the allowed entries", async () => {
     const { folder } = await boot();
@@ -241,17 +251,20 @@ describe("settings lifecycle", () => {
     expect(JSON.parse(root.file("settings.json")!.data)).toEqual({ units: "imperial", "dashboard.theme": "hud" });
   });
 
-  it("lets the file win over memory", async () => {
+  it("lets the file win over memory, except changes settings.json never received", async () => {
+    stubStorage().set(
+      "obd-dash.settings",
+      JSON.stringify({ values: { units: "imperial", "dashboard.redlineRpm": 6500 }, pending: ["dashboard.redlineRpm"] }),
+    );
     const root = new FakeDir("OBD Dash").seed("settings.json", '{"units":"metric","dashboard.redlineRpm":7000}');
     const { folder, settings } = await boot(root);
-    settings.setSetting("units", "imperial");
     settings.setSetting("dashboard.hudMirror", true);
     await folder.useFolder.getState().link();
     await tick();
-    expect(settings.getSetting("units", "x")).toBe("metric");
+    expect(settings.getSetting("units", "x")).toBe("metric"); // only in the old mirror: the file wins
     expect(JSON.parse(root.file("settings.json")!.data)).toEqual({
       units: "metric",
-      "dashboard.redlineRpm": 7000,
+      "dashboard.redlineRpm": 6500, // changed while no folder was linked: newer than the file
       "dashboard.hudMirror": true,
     });
   });
@@ -292,6 +305,42 @@ describe("settings lifecycle", () => {
       "dashboard.customLayouts": { active: "l1", layouts: [] },
     });
     expect([...ls.keys()]).toEqual(["unrelated"]);
+  });
+
+  it("survives a restart with no folder, then moves everything into settings.json when one is linked", async () => {
+    const ls = stubStorage();
+    let { settings } = await boot(); // no folder picker, no OPFS: e.g. a phone browser
+    settings.setSetting("dashboard.redlineRpm", 7200);
+    settings.setSetting("dashboard.customLayouts", { active: "l1", layouts: [{ id: "l1", name: "Mine", widgets: [] }] });
+
+    ({ settings } = await boot()); // restart
+    expect(settings.getSetting("dashboard.redlineRpm", 6500)).toBe(7200);
+    expect(settings.getSetting("dashboard.customLayouts", null)).toEqual({ active: "l1", layouts: [{ id: "l1", name: "Mine", widgets: [] }] });
+
+    const root = new FakeDir("OBD Dash").seed("settings.json", '{"dashboard.redlineRpm":6000,"units":"imperial"}');
+    const m = await boot(root);
+    await m.folder.useFolder.getState().link();
+    await tick();
+    expect(JSON.parse(root.file("settings.json")!.data)).toMatchObject({ "dashboard.redlineRpm": 7200, units: "imperial" });
+    expect(JSON.parse(ls.get("obd-dash.settings")!)).toMatchObject({ values: { "dashboard.redlineRpm": 7200, units: "imperial" }, pending: [] });
+  });
+
+  it("doesn't crash on blocked or corrupt browser storage", async () => {
+    stubStorage().set("obd-dash.settings", "{corrupt");
+    let { settings } = await boot();
+    expect(settings.getSetting("units", "metric")).toBe("metric");
+    settings.setSetting("units", "imperial");
+    vi.stubGlobal("localStorage", {
+      getItem: () => {
+        throw new Error("SecurityError");
+      },
+      setItem: () => {
+        throw new Error("QuotaExceededError");
+      },
+    });
+    ({ settings } = await boot());
+    settings.setSetting("units", "imperial");
+    expect(settings.getSetting("units", "metric")).toBe("imperial");
   });
 
   it("keeps a malformed settings.json, warns and uses defaults", async () => {

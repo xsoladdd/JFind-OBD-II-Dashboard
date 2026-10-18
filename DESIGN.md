@@ -122,12 +122,19 @@ Phone first. Three layouts, switched in CSS only:
   span the width (`grid gap-2 sm:grid-cols-2`). Never put a primary action only in the header.
 - Respect safe areas: header and rail pad `env(safe-area-inset-left/right)`, bars pad `env(safe-area-inset-bottom)`.
 - `html` has `scroll-padding-block: 4.5rem` so the sticky header and tab bar never hide a focused element.
+- **Split screen** (Android split view next to Maps, JOID-0019): a third of a phone screen is about 360x260 (stacked)
+  or 260x360 (side by side); two thirds about 360x520 / 520x360. Every page must work there with no horizontal scroll.
+  - `short:` still swaps in the rail at 360x260. Two columns of page content use `short-wide:` (also ≥ 40rem wide),
+    so a narrow landscape pane gets one column.
+  - `split:` (height ≤ 26rem and width ≤ 40rem) is for the drive view: Drive and HUD keep only speed and RPM there.
+  - Prefer container queries (`@container`, `@[13rem]:`) for anything inside a tile or card: the pane, not the
+    screen, decides. Custom sizes its grid and numbers this way.
 - Dashboard landscape: everything must fit 844x390 without scrolling. The dashboard is the full-screen drive view
   (§12): Classic shows its 4 gauges in one row (`short:grid-cols-4`), Drive puts speed on the left.
 
 ## 7. Motion
 
-- Only state changes move: colour and background (150ms), button press (150ms), gauge value (250ms linear, already
+- Only state changes move: colour and background (150ms), button press (150ms), gauge value (100ms linear, already
   in `Gauge`). Pulse only on states that are actively changing (connecting, reconnecting, a fresh alert).
 - No entrance animations, scroll effects or idle loops.
 - `prefers-reduced-motion: reduce` collapses every animation and transition (global rule in `app/globals.css`).
@@ -264,6 +271,21 @@ From JOID-0018 (Trips, Garage, Alerts, PIDs):
 - **Field names** in car, reminder, service, rule and PID forms are local identifiers with `autocomplete="off"`:
   browser autofill has nothing useful to offer for them.
 
+From JOID-0019 (Custom default, split screen):
+
+- **Custom is the default theme** (`useTheme` default `"custom"`), not Drive, which §12 describes as the drive-first
+  layout. The user's call "for now": they drive with Custom. Drive stays one tap away in the Menu. Revisit if new
+  users find the starter layout busy.
+- **Custom tile grip (⠿) is `aria-hidden` and not focusable**: dragging is a pointer shortcut. Keyboard and
+  screen-reader users select the tile (a real button) and use Move up / Move down in the tile panel. The grip is
+  44px, not 72px: editing is parking-only.
+- **Tile panel controls are 44px** (Width, Height, Move up/down, Remove): parking-only, like the rest of Custom
+  editing.
+- **The "OBD DASH" wordmark hides below 23rem** (`max-[23rem]:hidden`) so the connection chip fits a split-screen pane.
+- **Tab labels hyphenate (or break) below ~300px** instead of clipping: five tabs in 260px leave about 52px each.
+- **Drive and HUD drop their extras in a small pane** (`split:`): coolant/fuel can't stay glanceable there. Sport's
+  readouts truncate at 260px wide and Classic's four dials get small; left as is for now.
+
 ## 12. Driving
 
 OBD Dash is mostly used on a phone in a mount at arm's length, in portrait or landscape. Where a screen can be used
@@ -360,7 +382,8 @@ Starting points for the pages still to restyle. These are suggestions to confirm
   engine and the trip watcher keep running. With `cacheComponents`, a page you navigate away from stays in the DOM
   with an inline `display: none !important`; the variant ignores a drive view hidden that way. Don't reuse the id.
 - The view fills the window (`fixed inset-0`) and pads every edge with `max(1rem, env(safe-area-inset-*))`.
-- Layouts: Drive (default for new installs), Classic, Sport, HUD, Minimal and Custom (view mode) work while moving.
+- Layouts: Custom in view mode (the default for new installs since JOID-0019, see §11), Drive, Classic, Sport, HUD
+  and Minimal work while moving.
   Engineer and Custom editing are parking-only.
 - The screen stays on (Wake Lock) while the dashboard is open. Full screen is a switch in the Menu where the
   Fullscreen API exists.

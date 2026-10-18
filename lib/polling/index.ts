@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import type { ElmClient } from "../elm/ElmClient";
 import { getClient, useConnection } from "../store/connection";
+import { feedGear, withGear } from "../store/gear";
 import { ATRV, useLive } from "../store/live";
 import { getCustomPids } from "../store/settings";
 import { subscribeSettings } from "../storage/settings";
@@ -33,9 +34,10 @@ function startOn(client: ElmClient) {
     fast,
     custom: (lastCustom = getCustomPids()),
     protocol: useConnection.getState().protocol,
-    onSupported: (ids) => useLive.setState({ supported: ids }),
+    onSupported: (ids) => useLive.setState({ supported: withGear(ids) }),
     onValue: (id, v, t) => {
       useLive.getState().record(id, v, t);
+      feedGear(id, v, t);
       if (id === ATRV.id) useConnection.setState({ voltage: `${v.toFixed(1)}V` });
     },
     onWarning: (text) => toast.warn(text),

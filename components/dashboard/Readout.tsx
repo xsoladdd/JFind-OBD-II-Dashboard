@@ -21,7 +21,7 @@ export function Readout({ id, valueClass = "text-5xl", className }: { id: string
         {zone && <span className={cx("shrink-0 font-bold", ZONE_TEXT[zone.tone])}>{zone.word}</span>}
       </div>
       <div className={cx("num truncate leading-none", valueClass, zone ? ZONE_TEXT[zone.tone] : "text-fg")}>
-        {fmt(d.value, d.unit)}
+        {d.text && d.live ? d.text(d.live.value) : fmt(d.value, d.unit)}
         <span className="ml-1.5 font-sans text-xl font-medium text-fg-faint [font-stretch:100%]">{d.unit}</span>
       </div>
     </div>

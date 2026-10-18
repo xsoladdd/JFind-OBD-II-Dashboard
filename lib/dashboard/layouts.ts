@@ -1,9 +1,10 @@
 /** Custom dashboard layouts (the "Custom" theme). Pure functions; persisted via useCustomLayouts in lib/store/settings.ts. */
 export type WidgetKind = "gauge" | "number" | "bar" | "sparkline";
-export type WidgetSize = "1x1" | "2x1" | "2x2";
+/** Width × height: width 1 = half, 2 = full; height 1 = normal, 2 = tall. "1x2" is new in JOID-0019. */
+export type WidgetSize = "1x1" | "2x1" | "1x2" | "2x2";
 export interface Widget {
   id: string;
-  /** Live item id: a registry PID ("010C") or "ATRV". */
+  /** Live item id: a registry PID ("010C"), "ATRV", "GEAR" or a custom PID. */
   pid: string;
   kind: WidgetKind;
   size: WidgetSize;
@@ -19,7 +20,24 @@ export interface CustomLayouts {
 }
 
 export const EMPTY_LAYOUTS: CustomLayouts = { active: "", layouts: [] };
-export const SIZES: WidgetSize[] = ["1x1", "2x1", "2x2"];
+/** What Custom shows before any layout is saved (first run). A value the car doesn't report says so in its tile. */
+export const STARTER_LAYOUTS: CustomLayouts = {
+  active: "starter",
+  layouts: [
+    {
+      id: "starter",
+      name: "Starter",
+      widgets: [
+        { id: "starter-speed", pid: "010D", kind: "number", size: "1x1" },
+        { id: "starter-gear", pid: "GEAR", kind: "number", size: "1x1" },
+        { id: "starter-rpm", pid: "010C", kind: "gauge", size: "2x2" },
+        { id: "starter-coolant", pid: "0105", kind: "bar", size: "1x1" },
+        { id: "starter-fuel", pid: "012F", kind: "bar", size: "1x1" },
+      ],
+    },
+  ],
+};
+const SIZES: WidgetSize[] = ["1x1", "2x1", "1x2", "2x2"];
 export const KINDS: { id: WidgetKind; label: string }[] = [
   { id: "gauge", label: "Dial gauge" },
   { id: "number", label: "Number" },
@@ -80,5 +98,36 @@ export function moveWidget(s: CustomLayouts, layoutId: string, from: number, to:
   });
 }
 
-/** Next size in the 1×1 → 2×1 → 2×2 cycle. */
-export const nextSize = (size: WidgetSize) => SIZES[(SIZES.indexOf(size) + 1) % SIZES.length]!;
+export const isFull = (size: WidgetSize) => size[0] === "2";
+export const isTall = (size: WidgetSize) => size[2] === "2";
+export const sizeOf = (full: boolean, tall: boolean) => `${full ? 2 : 1}x${tall ? 2 : 1}` as WidgetSize;
+
+const str = (v: unknown, fallback: string) => (typeof v === "string" && v ? v : fallback);
+const obj = (v: unknown): Record<string, unknown> | null => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null);
+
+/**
+ * settings.json is hand-editable: repairs saved layouts instead of dropping them. Unknown kinds become numbers, unknown
+ * sizes half width, missing ids get new ones; only entries that aren't objects, and widgets without a value id, go.
+ */
+export function sanitizeLayouts(v: unknown): CustomLayouts {
+  const s = obj(v);
+  if (!s || !Array.isArray(s.layouts)) return EMPTY_LAYOUTS;
+  const layouts = s.layouts.flatMap((raw): Layout[] => {
+    const l = obj(raw);
+    if (!l) return [];
+    const widgets = (Array.isArray(l.widgets) ? l.widgets : []).flatMap((rw): Widget[] => {
+      const w = obj(rw);
+      if (!w || typeof w.pid !== "string" || !w.pid) return [];
+      return [
+        {
+          id: str(w.id, newId()),
+          pid: w.pid,
+          kind: KINDS.some((k) => k.id === w.kind) ? (w.kind as WidgetKind) : "number",
+          size: SIZES.includes(w.size as WidgetSize) ? (w.size as WidgetSize) : "1x1",
+        },
+      ];
+    });
+    return [{ id: str(l.id, newId()), name: str(l.name, "Layout"), widgets }];
+  });
+  return { active: str(s.active, ""), layouts };
+}

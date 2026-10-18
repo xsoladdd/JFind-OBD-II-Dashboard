@@ -33,6 +33,17 @@ export function rng(seed: number) {
   };
 }
 
+/** Demo gearbox, rpm per km/h for gears 1–5 (made up, like a small petrol car). Not reported as PID 01A4. */
+export const SIM_GEARS = [120, 68, 45, 34, 27];
+const SHIFT_RPM = 2800;
+
+/** The demo car shifts up at 2800 rpm and down when the next gear down fits; below ~9 km/h the clutch slips. */
+function simRpm(speed: number) {
+  if (speed === 0) return 780;
+  const ratio = SIM_GEARS.find((r) => speed * r <= SHIFT_RPM) ?? SIM_GEARS.at(-1)!;
+  return Math.max(1100, speed * ratio);
+}
+
 export function engineAt(t: number, rand: () => number): EngineState {
   const noise = (amp: number) => (rand() - 0.5) * 2 * amp;
   const phase = t % 60;
@@ -49,13 +60,14 @@ export function engineAt(t: number, rand: () => number): EngineState {
     speed = 90 * (1 - (phase - 40) / 10);
   }
   throttle = Math.max(0, throttle + noise(1.5));
-  const rpm = Math.max(600, (speed === 0 ? 780 : 900 + speed * 26) + throttle * 12 + noise(25));
+  speed = Math.max(0, speed + (speed > 0 ? noise(0.8) : 0));
+  const rpm = Math.max(600, simRpm(speed) + noise(25)); // from the noisy speed: in gear, wheels and engine move together
   const load = Math.min(100, 18 + throttle * 1.6 + noise(2));
   const maf = (rpm * load) / 5000;
   const warm = 1 - Math.exp(-t / 180);
   return {
     rpm,
-    speed: Math.max(0, speed + (speed > 0 ? noise(0.8) : 0)),
+    speed,
     throttle,
     load,
     coolant: 18 + 72 * warm + noise(0.4),

@@ -50,9 +50,14 @@ Wrap any multi-command or state-changing ELM operation in `withPollingPaused(fn)
 
 - On start it reads the supported-PID bitmasks (`discoverSupported`) and polls only registry PIDs the car supports, plus `ATRV`.
 - **Fast** (RPM, speed, throttle, load, and anything promoted): polled back-to-back, round-robin.
-- **Medium** (everything else, including `ATRV`): each one every 3 s.
+- **Medium** (everything else, including `ATRV`): each one every 3 s, when the bus has room (below).
 - **Slow** (fuel level, baro, ambient): each one every 30 s.
-- Each loop polls the most overdue medium/slow item if one is due, otherwise the next fast item. The tiers live in `TIERS`.
+- **RPM (`LEAD`) gets every other request** while it's polled, so the needle keeps up when revving. The other requests
+  alternate between the most overdue medium/slow item and the next other fast item, so neither tier starves the other.
+  The tiers live in `TIERS`. With many supported PIDs a medium item can come round later than 3 s.
+- Measured with the simulator at about 60 ms per reply (an ELM327-like rate, JOID-0019): RPM went from 1.3 to 8.2
+  updates/s (mean gap 723 to 122 ms); speed and throttle stayed at about 1.3/s, and medium items slowed from every
+  ~3 s to every ~8–10 s. The needle's CSS transition is 100 ms.
 - A PID that answers `NO DATA` 3 times in a row is dropped for the session, because some ECUs advertise PIDs they never answer. 5 timeouts in a row raise one warning toast. A disconnect stops the Scheduler, and the glue restarts it on reconnect.
 - The `ATRV` reading is mirrored into `useConnection`'s existing `voltage` field, so the shell's voltage stays current while polling runs.
 
@@ -95,13 +100,13 @@ This covers km/h, km, °C, kPa, L, L/h and L/100km (to US mpg, US gallons). Unit
 
 | Theme | What it shows |
 | --- | --- |
-| Drive (default) | Speed as the hero number, RPM as a full-width bar with the redline marked ("Redline" appears past it), and up to 2 values picked in the Menu (default coolant and fuel). Landscape puts speed on the left. |
+| Drive | Speed as the hero number, RPM as a full-width bar with the redline marked ("Redline" appears past it), and up to 2 values picked in the Menu (default coolant and fuel). Landscape puts speed on the left. In a small split-screen pane (`split:`) only speed and RPM stay. |
 | Classic | Needle gauges for RPM (red zone from the redline setting), speed, coolant (hot zone) and fuel (low zone). RPM and speed full width in portrait, one row in landscape. |
 | Sport | Big tach with the speed in the middle, a shift-light bar (lights from 75 % of the redline, flashes at it), and coolant, throttle and fuel below. |
 | Minimal | A card for every polled value, with a 60 s sparkline. |
 | Engineer (parked only) | A table of every polled PID with live, min, max and avg. A chart of up to 4 ticked PIDs, each drawn as a % of its own display range so they share one axis, with a hover tooltip showing real values. **Record** saves the session as CSV (`time_iso,elapsed_s,pid,name,value,unit`, raw metric units). |
 | HUD | Huge speed, an RPM bar and coolant on pure black. **Mirror HUD** (Menu) flips it for windshield reflection. |
-| Custom | Your own layouts of dial, number, bar and sparkline widgets. View mode works while moving; picking, creating and editing layouts is in the Menu's "When parked" section, and the in-grid editing tools lock while moving. See [custom-dashboard-and-alerts.md](custom-dashboard-and-alerts.md). |
+| Custom (default) | Your own layouts of dial, number, bar and sparkline widgets. View mode works while moving; picking, creating and editing layouts is in the Menu's "When parked" section, and the in-grid editing tools lock while moving. See [custom-dashboard-and-alerts.md](custom-dashboard-and-alerts.md). |
 
 Every theme draws its zones from `zonesFor()` in `components/dashboard/live.ts`, and pairs the colour with a word ("High", "Low", "Redline"). Warning thresholds are in `lib/dashboard/zones.ts`. They are general guidance, not from a standard: coolant hot at ≥ 110 °C and fuel low at ≤ 12 %. Redline is a per-car setting (default 6500 rpm, a placeholder).
 

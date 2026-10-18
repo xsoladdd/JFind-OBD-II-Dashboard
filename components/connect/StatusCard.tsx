@@ -23,7 +23,7 @@ export function StatusCard() {
 
   return (
     <section className={`${panelClass} p-4 sm:p-5`} aria-live="polite" aria-labelledby="status-title">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <Badge tone={TONE[s.status]} className="uppercase">
             {s.status}

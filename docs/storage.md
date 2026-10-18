@@ -1,6 +1,6 @@
 # Folder storage: settings.json, scans, debug logs, History
 
-OBD Dash has no database. Settings, scan history, trips, the Garage and debug logs are plain files in a **folder the user picks** (File System Access API, `showDirectoryPicker({ mode: "readwrite" })`). The only thing kept in the browser is the folder *handle*, in IndexedDB (`obd-dash-folder`, store `handle`, key `root`), so the user picks the folder once. No data goes there.
+OBD Dash has no database. Settings, scan history, trips, the Garage and debug logs are plain files in a **folder the user picks** (File System Access API, `showDirectoryPicker({ mode: "readwrite" })`). The browser keeps the folder *handle*, in IndexedDB (`obd-dash-folder`, store `handle`, key `root`), so the user picks the folder once, and a copy of the **settings** in localStorage (below), so they survive a restart even with no folder. Nothing else is kept in the browser.
 
 Browsers with no folder picker (iOS/Bluefy, maybe Android Chrome) fall back to the **browser's private file system (OPFS)**, with the same files and the same API. See "Browser fallback" below.
 
@@ -24,7 +24,7 @@ The folder card (on the Connect screen and the History page) shows one of four s
 
 | Status | What the user sees |
 | --- | --- |
-| `unsupported` | Neither `showDirectoryPicker` nor OPFS in this browser (feature-detected, no UA sniffing), e.g. Safari private browsing. An amber banner says history and settings can't be saved. Settings still work in memory for the session, and the rest of the app is unaffected. |
+| `unsupported` | Neither `showDirectoryPicker` nor OPFS in this browser (feature-detected, no UA sniffing), e.g. Safari private browsing. An amber banner says history can't be saved. Settings are still kept in the browser's localStorage (where it works), and the rest of the app is unaffected. |
 | `unlinked` | **Choose folder**. Picking an empty folder (e.g. a new "OBD Dash" folder) is suggested. |
 | `needs-permission` | Browsers usually ask again in a new visit. **Allow access to &lt;folder&gt;** calls `requestPermission`, which needs a tap. Tapping **Connect** or **Demo mode** also asks, since that's a tap too. Connect starts the Bluetooth chooser first, so it gets the gesture. |
 | `ready` | "Saving to &lt;folder&gt;", with **Change folder** and **Forget folder** (forgetting deletes no files). |
@@ -58,15 +58,23 @@ fileStamp(date?)            // "2026-10-16T12-30-05Z"
 getSetting(key, fallback) / setSetting(key, value) / useSetting(key, fallback) → [value, set]
 ```
 
-Setting keys: `ble.uuids`, `garage.activeId`, `units`, `dashboard.theme`, `dashboard.redlineRpm`, `dashboard.hudMirror`, `dashboard.customLayouts`, `alerts.rules`. `getSetting` returns the same object until the value changes, so object settings work with `useSyncExternalStore`.
+Setting keys include `ble.uuids`, `garage.activeId`, `units`, `dashboard.theme`, `dashboard.redlineRpm`, `dashboard.hudMirror`, `dashboard.customLayouts`, `alerts.rules` and `gear.learned` (see `lib/store/settings.ts` for all). `getSetting` returns the same object until the value changes, so object settings work with `useSyncExternalStore`.
 
 ## Settings lifecycle
 
-- Settings live in memory until the folder is `ready`. Then `settings.json` is read and merged, and the **file wins** over memory. The merged result is written back.
-- Changes are written 500 ms after the last one (debounced), atomically.
-- **Migration:** the old localStorage keys (`obd-dash.uuids`, `obd-dash.garage.active`, `obd-dash.setting.{units,dashboard.theme,dashboard.redlineRpm,dashboard.hudMirror,dashboard.customLayouts,alerts.rules}`) are read at startup, so they keep working before a folder is linked. They're copied into `settings.json` on the first link and removed only after that write succeeds. The app never writes localStorage.
+- Every change is kept in memory and written **synchronously to localStorage** (`obd-dash.settings` =
+  `{ values, pending }`), so it survives a restart with no folder linked (JOID-0019: on a phone where the folder isn't
+  available, the redline and Custom layouts used to reset). Every read and write is in try/catch: in private mode,
+  with blocked storage or a full quota the app keeps going in memory, and a corrupt copy is ignored.
+- At startup the values come from the localStorage copy (over the old keys below).
+- When the folder is `ready`, `settings.json` is read and merged. **The file wins**, except over `pending` keys: the
+  ones changed since `settings.json` was last written (e.g. while the folder waited for permission). Those are newer
+  than the file, so they win. Without this, a change made before access was granted was silently undone. The merged
+  result is written back, and `pending` is cleared for every key the write covered.
+- Changes are written to `settings.json` 500 ms after the last one (debounced), atomically.
+- **Migration:** the old localStorage keys (`obd-dash.uuids`, `obd-dash.garage.active`, `obd-dash.setting.{units,dashboard.theme,dashboard.redlineRpm,dashboard.hudMirror,dashboard.customLayouts,alerts.rules}`) are read at startup, under the localStorage copy. They're copied into `settings.json` on the first link and removed only after that write succeeds. They're never written.
 - **Malformed `settings.json`** (not JSON, or not an object): the app doesn't crash. The text is copied to `settings-broken-<time>.json`, defaults are used, a fresh `settings.json` is written, and the folder card shows a warning naming the backup.
-- `settings.json` is user-editable, so readers validate what they get. `loadOverrides()` keeps only string UUID fields, and the custom-layout and alert-rule hooks fall back to their defaults when the stored value has the wrong shape.
+- `settings.json` is user-editable, so readers validate what they get. `loadOverrides()` keeps only string UUID fields, the alert-rule hook falls back to its default when the stored value has the wrong shape, and the custom-layout hook repairs each layout (unknown widget kinds and sizes get defaults) without dropping it.
 
 ## Debug logs
 
@@ -94,5 +102,6 @@ newest first. Tapping a file opens a sheet with its actions. History lists `scan
 
 ## Not covered
 
-- Access revoked mid-session (e.g. via site settings): writes fail (log lines are dropped, settings stay in memory) until the page is reloaded and access is granted again.
+- Access revoked mid-session (e.g. via site settings): writes fail (log lines are dropped, settings stay in memory and localStorage, marked pending) until the page is reloaded and access is granted again.
+- Clearing the site's data deletes the localStorage copy too. With a real folder linked, `settings.json` still has everything.
 - OPFS can still be evicted by the browser under storage pressure, even after `persist()`. [verify] on iOS/Bluefy.

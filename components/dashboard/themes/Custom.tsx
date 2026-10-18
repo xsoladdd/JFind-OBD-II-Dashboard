@@ -51,7 +51,7 @@ function WidgetView({ w }: { w: Widget }) {
       </div>
       {w.kind === "bar" && (
         <div className="h-5 overflow-hidden rounded-full bg-surface-2" role="meter" aria-label={d.name} aria-valuemin={d.min} aria-valuemax={d.max} aria-valuenow={d.value}>
-          <div className="h-full rounded-full transition-[width] duration-200" style={{ width: `${pct}%`, background: zone ? ZONE_COLOR[zone.tone] : "var(--accent)" }} />
+          <div className="h-full rounded-full transition-[width] duration-100" style={{ width: `${pct}%`, background: zone ? ZONE_COLOR[zone.tone] : "var(--accent)" }} />
         </div>
       )}
       {w.kind === "sparkline" && <Sparkline points={d.live?.history ?? []} color={zone ? ZONE_COLOR[zone.tone] : undefined} />}

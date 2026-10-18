@@ -31,7 +31,7 @@ export function Hud() {
         <div className="h-8 overflow-hidden rounded-full bg-surface-1">
           <div
             className={cx("h-full origin-left", over ? "bg-danger" : "bg-fg")}
-            style={{ transform: `scaleX(${frac})`, transition: "transform 200ms linear" }}
+            style={{ transform: `scaleX(${frac})`, transition: "transform 100ms linear" }}
           />
         </div>
         <div className="num mt-3 flex justify-between gap-4 text-4xl">

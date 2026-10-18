@@ -38,6 +38,8 @@ export interface SchedulerOptions {
   protocol?: string;
 }
 
+/** RPM changes fastest when revving, so it gets every other request while it's polled (docs/dashboard.md). */
+export const LEAD = "010C";
 const NO_DATA_DROP = 3;
 // Second entries of a shared command (O2 trim): read together with their first entry, never requested themselves.
 const PIDS_WITH_CMD = new Set(PID_LIST.filter((p) => p.cmd).map((p) => p.id));
@@ -60,9 +62,9 @@ export function addRefs(map: Map<string, number>, ids: string[]) {
 }
 
 /**
- * Priority polling over one ElmClient: fast items back-to-back (round-robin), medium/slow items whenever their
- * interval is due (most overdue first). Only polls what the car reports as supported. Waits while
- * usePollingPause holds > 0.
+ * Priority polling over one ElmClient: RPM (LEAD) every other request; the other requests alternate between the
+ * most overdue medium/slow item and the other fast items (round-robin), so neither tier starves the other. Only
+ * polls what the car reports as supported. Waits while usePollingPause holds > 0.
  */
 export class Scheduler {
   private stopped = false;
@@ -77,6 +79,8 @@ export class Scheduler {
   private misses = new Map<string, number>();
   private timeouts = 0;
   private rr = 0;
+  private prev = "";
+  private dueTurn = false;
   private done: number[] = [];
   private readonly fast: Map<string, number>;
 
@@ -231,11 +235,14 @@ export class Scheduler {
 
   /** The next item id, or how many ms to wait when nothing is due and nothing is fast. */
   private pick(now: number): string | number {
+    const lead = this.items.includes(LEAD);
+    if (lead && this.prev !== LEAD) return (this.prev = LEAD);
     let due: string | null = null;
     let wait = Infinity;
     let overdue = -Infinity;
     const fast: string[] = [];
     for (const id of this.items) {
+      if (id === LEAD) continue;
       if (this.tier(id) === "fast") {
         fast.push(id);
         continue;
@@ -246,8 +253,9 @@ export class Scheduler {
         due = id;
       } else if (left > 0) wait = Math.min(wait, left);
     }
-    if (due) return due;
-    if (fast.length) return fast[this.rr++ % fast.length]!;
+    this.dueTurn = !this.dueTurn;
+    const next = due && (this.dueTurn || !fast.length) ? due : fast.length ? fast[this.rr++ % fast.length]! : lead ? LEAD : null;
+    if (next) return (this.prev = next);
     return Math.min(wait, 250);
   }
 

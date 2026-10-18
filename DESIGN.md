@@ -127,7 +127,7 @@ Phone first. Three layouts, switched in CSS only:
 
 ## 7. Motion
 
-- Only state changes move: colour and background (150ms), button press (150ms), gauge value (250ms linear, already
+- Only state changes move: colour and background (150ms), button press (150ms), gauge value (100ms linear, already
   in `Gauge`). Pulse only on states that are actively changing (connecting, reconnecting, a fresh alert).
 - No entrance animations, scroll effects or idle loops.
 - `prefers-reduced-motion: reduce` collapses every animation and transition (global rule in `app/globals.css`).

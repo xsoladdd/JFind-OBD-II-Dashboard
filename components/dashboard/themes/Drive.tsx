@@ -48,7 +48,7 @@ export function Drive() {
         >
           <div
             className={cx("h-full origin-left", over ? "bg-danger" : "bg-accent")}
-            style={{ transform: `scaleX(${clamp01((rpm.value ?? rpm.min) / rpm.max)})`, transition: "transform 200ms linear" }}
+            style={{ transform: `scaleX(${clamp01((rpm.value ?? rpm.min) / rpm.max)})`, transition: "transform 100ms linear" }}
           />
           {/* The redline, as a position as well as a colour. */}
           <div aria-hidden className="absolute inset-y-0 w-1.5 bg-danger" style={{ left: `${clamp01(redline / rpm.max) * 100}%` }} />

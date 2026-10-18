@@ -50,9 +50,14 @@ Wrap any multi-command or state-changing ELM operation in `withPollingPaused(fn)
 
 - On start it reads the supported-PID bitmasks (`discoverSupported`) and polls only registry PIDs the car supports, plus `ATRV`.
 - **Fast** (RPM, speed, throttle, load, and anything promoted): polled back-to-back, round-robin.
-- **Medium** (everything else, including `ATRV`): each one every 3 s.
+- **Medium** (everything else, including `ATRV`): each one every 3 s, when the bus has room (below).
 - **Slow** (fuel level, baro, ambient): each one every 30 s.
-- Each loop polls the most overdue medium/slow item if one is due, otherwise the next fast item. The tiers live in `TIERS`.
+- **RPM (`LEAD`) gets every other request** while it's polled, so the needle keeps up when revving. The other requests
+  alternate between the most overdue medium/slow item and the next other fast item, so neither tier starves the other.
+  The tiers live in `TIERS`. With many supported PIDs a medium item can come round later than 3 s.
+- Measured with the simulator at about 60 ms per reply (an ELM327-like rate, JOID-0019): RPM went from 1.3 to 8.2
+  updates/s (mean gap 723 to 122 ms); speed and throttle stayed at about 1.3/s, and medium items slowed from every
+  ~3 s to every ~8–10 s. The needle's CSS transition is 100 ms.
 - A PID that answers `NO DATA` 3 times in a row is dropped for the session, because some ECUs advertise PIDs they never answer. 5 timeouts in a row raise one warning toast. A disconnect stops the Scheduler, and the glue restarts it on reconnect.
 - The `ATRV` reading is mirrored into `useConnection`'s existing `voltage` field, so the shell's voltage stays current while polling runs.
 

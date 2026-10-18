@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { AlertRule } from "../alerts/rules";
 import { sanitizeProfiles, type AdapterProfile } from "../connect/profiles";
 import { sanitizeCustomPids, type CustomPid } from "../obd/custom";
-import { EMPTY_LAYOUTS, type CustomLayouts } from "../dashboard/layouts";
+import { sanitizeLayouts, STARTER_LAYOUTS, type CustomLayouts } from "../dashboard/layouts";
 import type { UnitSystem } from "../units";
 import { getSetting, setSetting, useSetting } from "../storage/settings";
 import { EXAMPLE_CDA_M2, EXAMPLE_CRR } from "../trips/dyno";
@@ -15,7 +15,8 @@ export const DEFAULT_REDLINE = 6500;
 // Each persisted setting lives behind one hook, so the storage backend is swapped in one place.
 export const useUnits = () => useSetting<UnitSystem>("units", "metric");
 export const getUnits = () => getSetting<UnitSystem>("units", "metric");
-export const useTheme = () => useSetting<ThemeId>("dashboard.theme", "drive");
+/** Custom is the default "for now" (the user's choice, JOID-0019; DESIGN.md §11). */
+export const useTheme = () => useSetting<ThemeId>("dashboard.theme", "custom");
 export const useRedline = () => useSetting<number>("dashboard.redlineRpm", DEFAULT_REDLINE);
 export const useHudMirror = () => useSetting<boolean>("dashboard.hudMirror", false);
 
@@ -53,13 +54,19 @@ export const getLastAdapter = () => lastAdapter(getSetting<unknown>("ble.lastAda
 export const setLastAdapter = (v: LastAdapter) => setSetting("ble.lastAdapter", v);
 const NO_RULES: AlertRule[] = []; // a stable fallback reference for useSyncExternalStore
 // settings.json is hand-editable: a value of the wrong shape falls back to the default instead of crashing the page.
-const layouts = (v: CustomLayouts) => (v && Array.isArray(v.layouts) ? v : EMPTY_LAYOUTS);
+// Layouts are repaired, never dropped (lib/dashboard/layouts.ts), once per stored value so references stay stable.
+const fixedLayouts = new WeakMap<object, CustomLayouts>();
+const layouts = (v: unknown): CustomLayouts => {
+  if (!v || typeof v !== "object") return sanitizeLayouts(v);
+  if (!fixedLayouts.has(v)) fixedLayouts.set(v, sanitizeLayouts(v));
+  return fixedLayouts.get(v)!;
+};
 const rules = (v: AlertRule[]) => (Array.isArray(v) ? v : NO_RULES);
 export const useCustomLayouts = (): [CustomLayouts, (v: CustomLayouts) => void] => {
-  const [v, set] = useSetting<CustomLayouts>("dashboard.customLayouts", EMPTY_LAYOUTS);
+  const [v, set] = useSetting<CustomLayouts>("dashboard.customLayouts", STARTER_LAYOUTS);
   return [layouts(v), set];
 };
-export const getCustomLayouts = () => layouts(getSetting<CustomLayouts>("dashboard.customLayouts", EMPTY_LAYOUTS));
+export const getCustomLayouts = () => layouts(getSetting<CustomLayouts>("dashboard.customLayouts", STARTER_LAYOUTS));
 export const useAlertRules = (): [AlertRule[], (v: AlertRule[]) => void] => {
   const [v, set] = useSetting<AlertRule[]>("alerts.rules", NO_RULES);
   return [rules(v), set];

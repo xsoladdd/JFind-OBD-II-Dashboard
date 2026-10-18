@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { PIDS, type GaugeType } from "../obd/pids";
+import { gearText, PIDS, type GaugeType } from "../obd/pids";
 import { getCustomPids } from "./settings";
 
 /**
@@ -31,6 +31,8 @@ const HISTORY_MAX = 300;
 
 /** Adapter voltage from ATRV, polled alongside the PIDs so it shares the same store. */
 export const ATRV = { id: "ATRV", name: "Adapter voltage (ATRV)", unit: "V", min: 0, max: 16 };
+/** The gear: PID 01A4 when the car reports it, else estimated from RPM and speed (lib/store/gear.ts). NaN = none. */
+export const GEAR = { id: "GEAR", name: "Gear", unit: "", min: 0, max: 10, text: gearText };
 export interface LiveDef {
   id: string;
   name: string;
@@ -41,9 +43,9 @@ export interface LiveDef {
   /** Set for enum / status PIDs: show text, keep out of gauges and alerts. */
   text?: (v: number) => string;
 }
-/** Registry PIDs, ATRV, and the user's custom PIDs (lib/obd/custom.ts). */
+/** Registry PIDs, ATRV, GEAR, and the user's custom PIDs (lib/obd/custom.ts). */
 export const liveDef = (id: string): LiveDef | undefined =>
-  PIDS[id] ?? (id === ATRV.id ? ATRV : getCustomPids().find((c) => c.id === id));
+  PIDS[id] ?? (id === ATRV.id ? ATRV : id === GEAR.id ? GEAR : getCustomPids().find((c) => c.id === id));
 
 export const useLive = create<LiveState>((set) => ({
   supported: [],

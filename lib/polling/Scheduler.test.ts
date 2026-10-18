@@ -49,7 +49,7 @@ describe("Scheduler", () => {
     expect(sent).not.toContain("0133");
     expect(scheduler.polled).not.toContain("0110");
 
-    const fast = Object.keys(TIERS).filter((id) => TIERS[id] === "fast");
+    const fast = Object.keys(TIERS).filter((id) => TIERS[id] === "fast" && scheduler.polled.includes(id));
     const others = scheduler.polled.filter((id) => !fast.includes(id));
     const minFast = Math.min(...fast.map(count));
     const maxOther = Math.max(...others.map(count));

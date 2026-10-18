@@ -15,6 +15,7 @@ export const TIERS: Record<string, Tier> = {
   "010D": "fast", // speed
   "0111": "fast", // throttle
   "0104": "fast", // load
+  "01A4": "fast", // gear, on the few cars that report it
   "012F": "slow", // fuel level
   "0133": "slow", // baro
   "0146": "slow", // ambient
